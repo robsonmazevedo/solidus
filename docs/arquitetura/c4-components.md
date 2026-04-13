@@ -20,9 +20,11 @@ C4Component
         Component(tipo, "TipoLancamento", "Value Object", "Crédito ou débito")
         Component(lancamento_repo, "LancamentoRepository", "EF Core", "Persiste lançamentos")
         Component(outbox_repo, "OutboxRepository", "EF Core", "Persiste eventos outbox")
+        Component(relay, "OutboxRelayService", ".NET BackgroundService", "Publica eventos pendentes no broker")
     }
 
     ContainerDb_Ext(postgres, "PostgreSQL", "Banco relacional", "Schema registros")
+    Container_Ext(rabbitmq, "RabbitMQ", "Message broker", "Recebe eventos publicados")
 
     Rel(controller, handler, "Envia comando", "MediatR")
     Rel(handler, lancamento, "Cria e valida")
@@ -32,6 +34,8 @@ C4Component
     Rel(handler, outbox_repo, "Persiste evento outbox")
     Rel(lancamento_repo, postgres, "SQL")
     Rel(outbox_repo, postgres, "SQL")
+    Rel(relay, outbox_repo, "Lê pendentes e marca publicados")
+    Rel(relay, rabbitmq, "PUBLISH MovimentaçãoRegistrada", "AMQP")
 ```
 
 ### Elementos
@@ -45,6 +49,7 @@ C4Component
 | TipoLancamento | Domain | Value object que representa crédito ou débito |
 | LancamentoRepository | Infrastructure | Persiste e recupera lançamentos no banco de dados |
 | OutboxRepository | Infrastructure | Persiste eventos de saída na mesma transação do lançamento |
+| OutboxRelayService | Infrastructure | Background service que executa o ciclo de polling da outbox: lê eventos com status `PENDENTE`, publica no broker e atualiza o status para `PUBLICADO` |
 
 ---
 
