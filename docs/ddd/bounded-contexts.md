@@ -35,7 +35,6 @@ Capturar e preservar toda movimentação financeira do comerciante de forma conf
 | Lançamento | Registro de uma movimentação com tipo, valor e data de competência |
 | Crédito | Lançamento que representa entrada de valor |
 | Débito | Lançamento que representa saída de valor |
-| Data de competência | Data à qual o lançamento pertence, independente da data de registro |
 | Chave de idempotência | Identificador que impede o registro duplicado do mesmo lançamento |
 
 ---
@@ -67,6 +66,7 @@ Consolidar as movimentações registradas e disponibilizar ao comerciante a vis�
 |-------|---------------------------|
 | Posição | Saldo consolidado de um dia específico |
 | Consolidado | Resultado do processamento de todas as movimentações de um dia |
+| Consolidação | Processo de cálculo do saldo diário a partir dos lançamentos recebidos |
 | Saldo | Valor resultante da soma de créditos menos débitos do dia |
 | Data de posição | Data à qual o consolidado se refere |
 

@@ -14,7 +14,6 @@ Este glossário reúne os termos que compõem a linguagem ubíqua do sistema Sol
 | Lançamento | Movimentação que passou por todas as validações e foi registrada com sucesso no sistema | Não é sinônimo de movimentação; representa apenas o que foi aceito |
 | Crédito | Lançamento que representa entrada de valor para o comerciante | Não é um saldo positivo; é apenas a classificação do tipo do lançamento |
 | Débito | Lançamento que representa saída de valor para o comerciante | Não é um saldo negativo; é apenas a classificação do tipo do lançamento |
-| Data de competência | Data à qual o lançamento pertence, informada pelo comerciante no momento do registro | Não é a data em que o sistema processou o lançamento |
 | Chave de idempotência | Identificador informado pelo comerciante que garante que a mesma movimentação não seja registrada mais de uma vez | Não é o identificador interno do lançamento gerado pelo sistema |
 
 ---

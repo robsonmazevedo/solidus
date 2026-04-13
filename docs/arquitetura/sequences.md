@@ -90,3 +90,4 @@ sequenceDiagram
 | Cache-Aside | A posição diária é imutável após consolidada. É um dado de leitura intensiva e altamente cacheável |
 | Leitura direta no Redis | Atende o requisito de 50 req/s sem pressionar o banco de dados |
 | Fallback para o banco | Garante que o dado esteja sempre disponível, mesmo que o cache esteja frio ou expirado |
+| TTL como mecanismo de consistência | O cache do dia corrente usa TTL de 30 segundos; dias anteriores usam TTL de 1 hora. Quando o Posição Processor atualiza o consolidado no banco, o cache expira naturalmente dentro da janela de 60 segundos definida pelo RN-013, sem necessidade de invalidação explícita pelo Processor |

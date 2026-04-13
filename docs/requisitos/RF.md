@@ -28,8 +28,8 @@ O sistema deve permitir que o comerciante registre uma movimentação financeira
 | RN-002 | O valor da movimentação deve ser maior que zero. |
 | RN-003 | O valor é sempre informado como positivo. O tipo determina a direção da movimentação. |
 | RN-004 | A data de competência não pode ser futura. Lançamentos com data retroativa são permitidos. |
-| RN-005 | O sistema não deve registrar a mesma movimentação mais de uma vez. O comerciante deve fornecer um identificador único por operação para garantir esse controle. |
-| RN-006 | Quando o sistema recebe uma operação com identificador já registrado, deve retornar o registro original sem criar duplicidade. |
+| RN-005 | O sistema não deve registrar a mesma movimentação mais de uma vez. O comerciante deve fornecer uma chave de idempotência por operação para garantir esse controle. |
+| RN-006 | Quando o sistema recebe uma operação com chave de idempotência já registrada, deve retornar o registro original sem criar duplicidade. |
 | RN-007 | O registro da movimentação e a notificação dos demais módulos do sistema devem ocorrer de forma atômica. Não é aceitável registrar sem notificar, nem notificar sem registrar. |
 | RN-008 | O comerciante tem acesso exclusivamente às suas próprias movimentações. |
 
@@ -37,7 +37,7 @@ O sistema deve permitir que o comerciante registre uma movimentação financeira
 
 | Campo | Obrigatoriedade | Regras |
 |-------|----------------|--------|
-| Identificador da operação | Obrigatório | Único por comerciante |
+| Chave de idempotência | Obrigatório | Única por comerciante |
 | Tipo | Obrigatório | Crédito ou débito |
 | Valor | Obrigatório | Maior que zero; até duas casas decimais |
 | Data de competência | Obrigatório | Não futura |
@@ -50,7 +50,7 @@ O sistema deve permitir que o comerciante registre uma movimentação financeira
 | Valor igual a zero | Operação rejeitada |
 | Valor negativo | Operação rejeitada |
 | Data de competência futura | Operação rejeitada |
-| Identificador da operação já registrado | Retorna o registro original sem duplicação |
+| Chave de idempotência já registrada | Retorna o registro original sem duplicação |
 | Indisponibilidade do módulo de consolidado | Não afeta o registro da movimentação |
 
 ---

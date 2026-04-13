@@ -54,7 +54,7 @@ O Redis resolve os dois problemas: cache compartilhado entre todas as instância
 ## Limitações
 
 - O Redis se torna um ponto de falha adicional. A implementação do padrão Cache-Aside no `ConsultarPosicaoDiariaHandler` garante fallback para o banco em caso de indisponibilidade, mas com latência maior.
-- O TTL do cache precisa ser calibrado. Um TTL muito curto reduz o benefício do cache. Um TTL muito longo pode servir dados defasados além do limite de 60 segundos do RN-013 para o consolidado do dia corrente.
+- O TTL do cache é definido por tipo de data: 30 segundos para o dia corrente (garante defasagem dentro da janela de 60 segundos do RN-013) e 1 hora para dias anteriores (dado imutável após a virada do dia). Nenhuma invalidação explícita é necessária: quando o Posição Processor grava no banco, o cache do dia corrente expira naturalmente dentro da janela permitida.
 
 ---
 
