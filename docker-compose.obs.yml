@@ -1,0 +1,72 @@
+name: solidus-obs
+
+services:
+
+  # ── Tracing ───────────────────────────────────────────────────────────────
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: solidus-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "${PORT_JAEGER_UI}:16686"
+      - "${PORT_JAEGER_GRPC}:4317"
+      - "${PORT_JAEGER_HTTP}:4318"
+    networks:
+      - solidus
+
+  # ── Métricas ──────────────────────────────────────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: solidus-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PORT_PROMETHEUS}:9090"
+    networks:
+      - solidus
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: solidus-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "${PORT_GRAFANA}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - solidus
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.61.0
+    container_name: solidus-redis-exporter
+    environment:
+      REDIS_ADDR: ${REDIS_EXPORTER_ADDR}
+    ports:
+      - "${PORT_REDIS_EXPORTER}:9121"
+    networks:
+      - solidus
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+# ── Rede ─────────────────────────────────────────────────────────────────────
+
+networks:
+  solidus:
+    external: true
+    name: solidus

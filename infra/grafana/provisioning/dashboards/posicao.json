@@ -109,7 +109,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "histogram_quantile(0.99, rate(posicao_http_duracao_segundos_bucket[1m]))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(posicao_http_duracao_segundos_bucket[1m])))",
           "legendFormat": "p99",
           "refId": "A"
         }
@@ -207,6 +207,12 @@
           "expr": "rabbitmq_queue_messages_unacknowledged{queue=\"posicao-processor\"}",
           "legendFormat": "unacked",
           "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(rate(rabbitmq_queue_messages_published_total{queue=\"posicao-processor\"}[1m]))",
+          "legendFormat": "publicadas/s",
+          "refId": "C"
         }
       ],
       "title": "Fila RabbitMQ",

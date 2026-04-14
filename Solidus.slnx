@@ -9,6 +9,11 @@
     <Project Path="tests/Solidus.Posicao.Processor.Tests/Solidus.Posicao.Processor.Tests.csproj" />
     <Project Path="tests/Solidus.Registros.Tests/Solidus.Registros.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/load/">
+    <File Path="tests/load/executar-k6.ps1" />
+    <File Path="tests/load/registros.js" />
+    <File Path="tests/load/posicao.js" />
+  </Folder>
   <Folder Name="/docs/adr/">
     <File Path="docs/adr/adr-001-comunicacao-assincrona.md" />
     <File Path="docs/adr/adr-002-transactional-outbox.md" />
@@ -57,5 +62,8 @@
     <File Path=".env.example" />
     <File Path=".gitignore" />
     <File Path="docker-compose.yml" />
+    <File Path="docker-compose.app.yml" />
+    <File Path="docker-compose.obs.yml" />
+    <File Path="docker-compose.tools.yml" />
   </Folder>
 </Solution>

@@ -74,7 +74,7 @@ builder.Services.AddRateLimiter(opts =>
                 ?? "anon",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 100,
+                PermitLimit = builder.Configuration.GetValue<int>("RateLimit:PermitLimit", 100),
                 Window      = TimeSpan.FromMinutes(1)
             }));
 });

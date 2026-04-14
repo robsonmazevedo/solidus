@@ -1,0 +1,60 @@
+name: solidus-tools
+
+services:
+
+  # ── Banco de dados ────────────────────────────────────────────────────────
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: solidus-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "${PORT_PGADMIN}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - solidus
+
+  # ── Cache ─────────────────────────────────────────────────────────────────
+
+  redisinsight:
+    image: redis/redisinsight:2.50
+    container_name: solidus-redisinsight
+    ports:
+      - "${PORT_REDISINSIGHT}:5540"
+    volumes:
+      - redisinsight_data:/data
+    networks:
+      - solidus
+
+  # ── Qualidade de código ───────────────────────────────────────────────────
+
+  sonarqube:
+    image: sonarqube:10.5-community
+    container_name: solidus-sonarqube
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    ports:
+      - "${PORT_SONARQUBE}:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - solidus
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+
+volumes:
+  pgadmin_data:
+  redisinsight_data:
+  sonarqube_data:
+  sonarqube_logs:
+
+# ── Rede ─────────────────────────────────────────────────────────────────────
+
+networks:
+  solidus:
+    external: true
+    name: solidus

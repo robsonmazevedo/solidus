@@ -111,7 +111,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "100 * rate(registros_lancamentos_erro_total[1m]) / (rate(registros_lancamentos_total[1m]) + rate(registros_lancamentos_erro_total[1m]) + 0.001)",
+          "expr": "100 * (rate(registros_lancamentos_erro_total[1m]) or vector(0)) / ((rate(registros_lancamentos_total[1m]) or vector(0)) + 0.001)",
           "legendFormat": "erro %",
           "refId": "A"
         }
@@ -164,7 +164,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "histogram_quantile(0.99, rate(registros_http_duracao_segundos_bucket[1m]))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(registros_http_duracao_segundos_bucket[1m])))",
           "legendFormat": "p99",
           "refId": "A"
         }
