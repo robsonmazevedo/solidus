@@ -4,4 +4,58 @@
     <Project Path="src/Solidus.Posicao.Processor/Solidus.Posicao.Processor.csproj" />
     <Project Path="src/Solidus.Registros.API/Solidus.Registros.API.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Solidus.Posicao.API.Tests/Solidus.Posicao.API.Tests.csproj" />
+    <Project Path="tests/Solidus.Posicao.Processor.Tests/Solidus.Posicao.Processor.Tests.csproj" />
+    <Project Path="tests/Solidus.Registros.Tests/Solidus.Registros.Tests.csproj" />
+  </Folder>
+  <Folder Name="/docs/adr/">
+    <File Path="docs/adr/adr-001-comunicacao-assincrona.md" />
+    <File Path="docs/adr/adr-002-transactional-outbox.md" />
+    <File Path="docs/adr/adr-003-read-model.md" />
+    <File Path="docs/adr/adr-004-redis-cache-distribuido.md" />
+    <File Path="docs/adr/adr-005-bancos-separados.md" />
+  </Folder>
+  <Folder Name="/docs/arquitetura/">
+    <File Path="docs/arquitetura/c4-context.md" />
+    <File Path="docs/arquitetura/c4-containers.md" />
+    <File Path="docs/arquitetura/c4-components.md" />
+    <File Path="docs/arquitetura/sequences.md" />
+    <File Path="docs/arquitetura/data-model.md" />
+    <File Path="docs/arquitetura/custos.md" />
+    <File Path="docs/arquitetura/escalabilidade.md" />
+    <File Path="docs/arquitetura/evolucoes.md" />
+    <File Path="docs/arquitetura/observabilidade.md" />
+    <File Path="docs/arquitetura/seguranca.md" />
+    <File Path="docs/arquitetura/transicao.md" />
+  </Folder>
+  <Folder Name="/docs/ddd/">
+    <File Path="docs/ddd/bounded-contexts.md" />
+    <File Path="docs/ddd/domains.md" />
+    <File Path="docs/ddd/ubiquitous-language.md" />
+  </Folder>
+  <Folder Name="/docs/requisitos/">
+    <File Path="docs/requisitos/RF.md" />
+    <File Path="docs/requisitos/RNF.md" />
+  </Folder>
+  <Folder Name="/infra/grafana/dashboards/">
+    <File Path="infra/grafana/provisioning/dashboards/dashboards.yml" />
+    <File Path="infra/grafana/provisioning/dashboards/posicao.json" />
+    <File Path="infra/grafana/provisioning/dashboards/registros.json" />
+  </Folder>
+  <Folder Name="/infra/grafana/datasources/">
+    <File Path="infra/grafana/provisioning/datasources/prometheus.yml" />
+  </Folder>
+  <Folder Name="/infra/prometheus/">
+    <File Path="infra/prometheus/prometheus.yml" />
+  </Folder>
+  <Folder Name="/infra/rabbitmq/">
+    <File Path="infra/rabbitmq/enabled_plugins" />
+  </Folder>
+  <Folder Name="/config/">
+    <File Path=".dockerignore" />
+    <File Path=".env.example" />
+    <File Path=".gitignore" />
+    <File Path="docker-compose.yml" />
+  </Folder>
 </Solution>

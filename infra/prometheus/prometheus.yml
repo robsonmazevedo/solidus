@@ -10,7 +10,7 @@ scrape_configs:
 
   - job_name: posicao-api
     static_configs:
-      - targets: ["posicao-api:8081"]
+      - targets: ["posicao-api:8080"]
     metrics_path: /metrics
 
   - job_name: posicao-processor
