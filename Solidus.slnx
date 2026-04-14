@@ -57,6 +57,9 @@
   <Folder Name="/infra/rabbitmq/">
     <File Path="infra/rabbitmq/enabled_plugins" />
   </Folder>
+  <Folder Name="/.github/workflows/">
+    <File Path=".github/workflows/ci.yml" />
+  </Folder>
   <Folder Name="/config/">
     <File Path=".dockerignore" />
     <File Path=".env.example" />
