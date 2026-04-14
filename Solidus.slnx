@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Solidus.Posicao.API/Solidus.Posicao.API.csproj" />
+    <Project Path="src/Solidus.Posicao.Processor/Solidus.Posicao.Processor.csproj" />
+    <Project Path="src/Solidus.Registros.API/Solidus.Registros.API.csproj" />
+  </Folder>
+</Solution>
