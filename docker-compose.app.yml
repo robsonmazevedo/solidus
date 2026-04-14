@@ -1,0 +1,68 @@
+name: solidus-app
+
+services:
+
+  # ── Serviços .NET ────────────────────────────────────────────────────────
+
+  registros-api:
+    build:
+      context: .
+      dockerfile: src/Solidus.Registros.API/Dockerfile
+    container_name: solidus-registros-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${APP_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Registros: ${REGISTROS_CONNECTION_STRING}
+      RabbitMQ__Host: ${RABBITMQ_HOST}
+      RabbitMQ__User: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Otlp__Endpoint: ${OTLP_ENDPOINT}
+      RateLimit__PermitLimit: ${REGISTROS_RATELIMIT_PERMIT}
+    ports:
+      - "${PORT_REGISTROS_API}:8080"
+    networks:
+      - solidus
+
+  posicao-api:
+    build:
+      context: .
+      dockerfile: src/Solidus.Posicao.API/Dockerfile
+    container_name: solidus-posicao-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${APP_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Posicao: ${POSICAO_CONNECTION_STRING}
+      ConnectionStrings__Redis: ${REDIS_CONNECTION}
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Otlp__Endpoint: ${OTLP_ENDPOINT}
+      RateLimit__PermitLimit: ${POSICAO_RATELIMIT_PERMIT}
+    ports:
+      - "${PORT_POSICAO_API}:8080"
+    networks:
+      - solidus
+
+  posicao-processor:
+    build:
+      context: .
+      dockerfile: src/Solidus.Posicao.Processor/Dockerfile
+    container_name: solidus-posicao-processor
+    environment:
+      DOTNET_ENVIRONMENT: ${APP_ENVIRONMENT}
+      ConnectionStrings__Posicao: ${POSICAO_CONNECTION_STRING}
+      RabbitMQ__Host: ${RABBITMQ_HOST}
+      RabbitMQ__User: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Otlp__Endpoint: ${OTLP_ENDPOINT}
+      Prometheus__Endpoint: ${PROMETHEUS_ENDPOINT}
+    networks:
+      - solidus
+
+# ── Rede ─────────────────────────────────────────────────────────────────────
+
+networks:
+  solidus:
+    external: true
+    name: solidus

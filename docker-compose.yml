@@ -1,0 +1,98 @@
+name: solidus-infra
+
+services:
+
+  # ── Bancos de dados ──────────────────────────────────────────────────────
+
+  postgres-registros:
+    image: postgres:16-alpine
+    container_name: solidus-postgres-registros
+    environment:
+      POSTGRES_DB: ${POSTGRES_REGISTROS_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_REGISTROS_PASSWORD}
+    ports:
+      - "${PORT_POSTGRES_REGISTROS}:${POSTGRES_INTERNAL_PORT}"
+    volumes:
+      - postgres_registros_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_REGISTROS_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - solidus
+
+  postgres-posicao:
+    image: postgres:16-alpine
+    container_name: solidus-postgres-posicao
+    environment:
+      POSTGRES_DB: ${POSTGRES_POSICAO_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_POSICAO_PASSWORD}
+    ports:
+      - "${PORT_POSTGRES_POSICAO}:${POSTGRES_INTERNAL_PORT}"
+    volumes:
+      - postgres_posicao_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_POSICAO_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - solidus
+
+  # ── Broker ───────────────────────────────────────────────────────────────
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: solidus-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "${PORT_RABBITMQ}:5672"
+      - "${PORT_RABBITMQ_MANAGEMENT}:15672"
+      - "${PORT_RABBITMQ_PROMETHEUS}:15692"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./infra/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - solidus
+
+  # ── Cache ────────────────────────────────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    container_name: solidus-redis
+    ports:
+      - "${PORT_REDIS}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - solidus
+
+  # ── Volumes ───────────────────────────────────────────────────────────────
+
+volumes:
+  postgres_registros_data:
+  postgres_posicao_data:
+  rabbitmq_data:
+  redis_data:
+
+  # ── Rede ─────────────────────────────────────────────────────────────────
+
+networks:
+  solidus:
+    driver: bridge
+    name: solidus
