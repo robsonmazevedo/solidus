@@ -8,15 +8,15 @@ services:
     image: postgres:16-alpine
     container_name: solidus-postgres-registros
     environment:
-      POSTGRES_DB: registros
-      POSTGRES_USER: solidus
-      POSTGRES_PASSWORD: ${POSTGRES_REGISTROS_PASSWORD:-solidus_dev}
+      POSTGRES_DB: ${POSTGRES_REGISTROS_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_REGISTROS_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${PORT_POSTGRES_REGISTROS}:${POSTGRES_INTERNAL_PORT}"
     volumes:
       - postgres_registros_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U solidus -d registros"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_REGISTROS_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,26 +27,31 @@ services:
     image: postgres:16-alpine
     container_name: solidus-postgres-posicao
     environment:
-      POSTGRES_DB: posicao
-      POSTGRES_USER: solidus
-      POSTGRES_PASSWORD: ${POSTGRES_POSICAO_PASSWORD:-solidus_dev}
+      POSTGRES_DB: ${POSTGRES_POSICAO_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_POSICAO_PASSWORD}
     ports:
-      - "5433:5432"
+      - "${PORT_POSTGRES_POSICAO}:${POSTGRES_INTERNAL_PORT}"
     volumes:
       - postgres_posicao_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U solidus -d posicao"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_POSICAO_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - solidus
 
-  adminer:
-    image: adminer:4
-    container_name: solidus-adminer
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: solidus-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     ports:
-      - "8084:8080"
+      - "${PORT_PGADMIN}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
     depends_on:
       postgres-registros:
         condition: service_healthy
@@ -61,12 +66,12 @@ services:
     image: rabbitmq:3.13-management-alpine
     container_name: solidus-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-solidus}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-solidus_dev}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     ports:
-      - "5672:5672"
-      - "15672:15672"
-      - "15692:15692"
+      - "${PORT_RABBITMQ}:5672"
+      - "${PORT_RABBITMQ_MANAGEMENT}:15672"
+      - "${PORT_RABBITMQ_PROMETHEUS}:15692"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./infra/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
@@ -84,7 +89,7 @@ services:
     image: redis:7-alpine
     container_name: solidus-redis
     ports:
-      - "6379:6379"
+      - "${PORT_REDIS}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -95,13 +100,13 @@ services:
     networks:
       - solidus
 
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: solidus-redis-commander
-    environment:
-      REDIS_HOSTS: local:redis:6379
+  redisinsight:
+    image: redis/redisinsight:2.50
+    container_name: solidus-redisinsight
     ports:
-      - "8083:8081"
+      - "${PORT_REDISINSIGHT}:5540"
+    volumes:
+      - redisinsight_data:/data
     depends_on:
       redis:
         condition: service_healthy
@@ -116,9 +121,9 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
-      - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
+      - "${PORT_JAEGER_UI}:16686"
+      - "${PORT_JAEGER_GRPC}:4317"
+      - "${PORT_JAEGER_HTTP}:4318"
     networks:
       - solidus
 
@@ -132,7 +137,7 @@ services:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - "${PORT_PROMETHEUS}:9090"
     networks:
       - solidus
 
@@ -140,10 +145,10 @@ services:
     image: grafana/grafana:10.4.2
     container_name: solidus-grafana
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
     ports:
-      - "3000:3000"
+      - "${PORT_GRAFANA}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -156,9 +161,9 @@ services:
     image: oliver006/redis_exporter:v1.61.0
     container_name: solidus-redis-exporter
     environment:
-      REDIS_ADDR: redis://redis:6379
+      REDIS_ADDR: ${REDIS_EXPORTER_ADDR}
     ports:
-      - "9121:9121"
+      - "${PORT_REDIS_EXPORTER}:9121"
     depends_on:
       redis:
         condition: service_healthy
@@ -173,7 +178,7 @@ services:
     environment:
       SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
     ports:
-      - "9000:9000"
+      - "${PORT_SONARQUBE}:9000"
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_logs:/opt/sonarqube/logs
@@ -188,17 +193,17 @@ services:
       dockerfile: src/Solidus.Registros.API/Dockerfile
     container_name: solidus-registros-api
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: ${APP_ENVIRONMENT}
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Registros: "Host=postgres-registros;Port=5432;Database=registros;Username=solidus;Password=${POSTGRES_REGISTROS_PASSWORD:-solidus_dev}"
-      RabbitMQ__Host: rabbitmq
-      RabbitMQ__User: ${RABBITMQ_USER:-solidus}
-      RabbitMQ__Password: ${RABBITMQ_PASSWORD:-solidus_dev}
-      Jwt__Secret: ${JWT_SECRET:-dev-secret-solidus-mude-em-producao-2026}
-      Jwt__Issuer: ${JWT_ISSUER:-solidus}
-      Otlp__Endpoint: http://jaeger:4317
+      ConnectionStrings__Registros: ${REGISTROS_CONNECTION_STRING}
+      RabbitMQ__Host: ${RABBITMQ_HOST}
+      RabbitMQ__User: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Otlp__Endpoint: ${OTLP_ENDPOINT}
     ports:
-      - "8080:8080"
+      - "${PORT_REGISTROS_API}:8080"
     depends_on:
       postgres-registros:
         condition: service_healthy
@@ -213,15 +218,15 @@ services:
       dockerfile: src/Solidus.Posicao.API/Dockerfile
     container_name: solidus-posicao-api
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: ${APP_ENVIRONMENT}
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Posicao: "Host=postgres-posicao;Port=5432;Database=posicao;Username=solidus;Password=${POSTGRES_POSICAO_PASSWORD:-solidus_dev}"
-      ConnectionStrings__Redis: redis:6379
-      Jwt__Secret: ${JWT_SECRET:-dev-secret-solidus-mude-em-producao-2026}
-      Jwt__Issuer: ${JWT_ISSUER:-solidus}
-      Otlp__Endpoint: http://jaeger:4317
+      ConnectionStrings__Posicao: ${POSICAO_CONNECTION_STRING}
+      ConnectionStrings__Redis: ${REDIS_CONNECTION}
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Otlp__Endpoint: ${OTLP_ENDPOINT}
     ports:
-      - "8081:8080"
+      - "${PORT_POSICAO_API}:8080"
     depends_on:
       postgres-posicao:
         condition: service_healthy
@@ -236,12 +241,15 @@ services:
       dockerfile: src/Solidus.Posicao.Processor/Dockerfile
     container_name: solidus-posicao-processor
     environment:
-      DOTNET_ENVIRONMENT: Development
-      ConnectionStrings__Posicao: "Host=postgres-posicao;Port=5432;Database=posicao;Username=solidus;Password=${POSTGRES_POSICAO_PASSWORD:-solidus_dev}"
-      RabbitMQ__Host: rabbitmq
-      RabbitMQ__User: ${RABBITMQ_USER:-solidus}
-      RabbitMQ__Password: ${RABBITMQ_PASSWORD:-solidus_dev}
-      Otlp__Endpoint: http://jaeger:4317
+      DOTNET_ENVIRONMENT: ${APP_ENVIRONMENT}
+      ConnectionStrings__Posicao: ${POSICAO_CONNECTION_STRING}
+      RabbitMQ__Host: ${RABBITMQ_HOST}
+      RabbitMQ__User: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Otlp__Endpoint: ${OTLP_ENDPOINT}
+      Prometheus__Endpoint: ${PROMETHEUS_ENDPOINT}
+    ports:
+      - "${PORT_PROCESSOR_METRICS}:8082"
     depends_on:
       postgres-posicao:
         condition: service_healthy
@@ -261,6 +269,8 @@ volumes:
   grafana_data:
   sonarqube_data:
   sonarqube_logs:
+  pgadmin_data:
+  redisinsight_data:
 
 # ── Rede ─────────────────────────────────────────────────────────────────
 

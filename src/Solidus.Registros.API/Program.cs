@@ -2,6 +2,9 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using MassTransit;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +14,7 @@ using Solidus.Registros.API.API;
 using Solidus.Registros.API.Infrastructure.HealthChecks;
 using Solidus.Registros.API.Infrastructure.Persistence;
 using Solidus.Registros.API.Infrastructure.Repositories;
+using Solidus.Registros.API.Infrastructure.Metrics;
 using Solidus.Registros.API.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,6 +44,7 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
+builder.Services.AddSingleton<RegistrosMetrics>();
 builder.Services.AddHostedService<OutboxRelayService>();
 
 builder.Services
@@ -83,6 +88,24 @@ builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+var otlpEndpoint = builder.Configuration["Otlp:Endpoint"];
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("registros-api"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddSource("MassTransit")
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddEntityFrameworkCoreInstrumentation();
+        if (otlpEndpoint is not null)
+            tracing.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+    })
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddMeter(RegistrosMetrics.MeterName)
+        .AddPrometheusExporter());
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -92,6 +115,18 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseExceptionHandler();
+
+app.Use(async (ctx, next) =>
+{
+    var metrics = ctx.RequestServices.GetRequiredService<RegistrosMetrics>();
+    var sw = System.Diagnostics.Stopwatch.StartNew();
+    await next(ctx);
+    metrics.HttpDuracaoSegundos.Record(sw.Elapsed.TotalSeconds,
+        new KeyValuePair<string, object?>("method", ctx.Request.Method),
+        new KeyValuePair<string, object?>("route", ctx.GetEndpoint()?.DisplayName ?? "unknown"),
+        new KeyValuePair<string, object?>("status_code", ctx.Response.StatusCode));
+});
+
 app.MapOpenApi();
 app.MapScalarApiReference();
 app.MapGet("/", () => Results.Redirect("/scalar/v1")).AllowAnonymous();
@@ -100,5 +135,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health").AllowAnonymous();
+app.MapPrometheusScrapingEndpoint("/metrics").AllowAnonymous();
 
 app.Run();

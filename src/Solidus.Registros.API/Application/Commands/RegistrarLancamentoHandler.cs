@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Solidus.Registros.API.Application.DTOs;
 using Solidus.Registros.API.Domain.Entities;
 using Solidus.Contracts.Events;
+using Solidus.Registros.API.Infrastructure.Metrics;
 using Solidus.Registros.API.Infrastructure.Outbox;
 using Solidus.Registros.API.Infrastructure.Persistence;
 using Solidus.Registros.API.Infrastructure.Repositories;
@@ -13,7 +14,8 @@ namespace Solidus.Registros.API.Application.Commands;
 public sealed class RegistrarLancamentoHandler(
     ILancamentoRepository lancamentoRepository,
     IOutboxRepository outboxRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<RegistrarLancamentoCommand, RegistrarLancamentoResult>
+    IUnitOfWork unitOfWork,
+    RegistrosMetrics metrics) : IRequestHandler<RegistrarLancamentoCommand, RegistrarLancamentoResult>
 {
     public async Task<RegistrarLancamentoResult> Handle(
         RegistrarLancamentoCommand command,
@@ -50,6 +52,7 @@ public sealed class RegistrarLancamentoHandler(
             await lancamentoRepository.AdicionarAsync(lancamento, cancellationToken);
             await outboxRepository.AdicionarAsync(outbox, cancellationToken);
             await unitOfWork.CommitAsync(cancellationToken);
+            metrics.LancamentosTotal.Add(1);
             return new RegistrarLancamentoResult(ToDto(lancamento), Criado: true);
         }
         catch (DbUpdateException)

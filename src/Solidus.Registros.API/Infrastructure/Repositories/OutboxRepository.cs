@@ -18,6 +18,16 @@ public sealed class OutboxRepository(RegistrosDbContext context) : IOutboxReposi
             .Take(limite)
             .ToListAsync(cancellationToken);
 
+    public async Task<(long Pendentes, DateTime? MaisAntigo)> ObterEstadoPendentesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var pendentes = await context.Outbox
+            .Where(e => e.Status == "PENDENTE")
+            .ToListAsync(cancellationToken);
+
+        return (pendentes.Count, pendentes.Min(e => (DateTime?)e.CriadoEm));
+    }
+
     public void MarcarPublicado(OutboxEntry entry)
         => entry.MarcarPublicado();
 }

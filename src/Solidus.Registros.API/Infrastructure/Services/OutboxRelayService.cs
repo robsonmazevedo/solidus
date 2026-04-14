@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MassTransit;
 using Solidus.Contracts.Events;
+using Solidus.Registros.API.Infrastructure.Metrics;
 using Solidus.Registros.API.Infrastructure.Persistence;
 using Solidus.Registros.API.Infrastructure.Repositories;
 
@@ -8,6 +9,7 @@ namespace Solidus.Registros.API.Infrastructure.Services;
 
 public sealed class OutboxRelayService(
     IServiceScopeFactory scopeFactory,
+    RegistrosMetrics metrics,
     ILogger<OutboxRelayService> logger) : BackgroundService
 {
     private static readonly TimeSpan Intervalo = TimeSpan.FromSeconds(5);
@@ -40,8 +42,12 @@ public sealed class OutboxRelayService(
         var pendentes = await outboxRepository.BuscarPendentesAsync(LoteMaximo, cancellationToken);
 
         if (pendentes.Count == 0)
+        {
+            metrics.AtualizarEstadoOutbox(0, 0);
             return;
+        }
 
+        long publicados = 0;
         foreach (var entry in pendentes)
         {
             try
@@ -49,6 +55,7 @@ public sealed class OutboxRelayService(
                 var evento = JsonSerializer.Deserialize<MovimentacaoRegistradaEvent>(entry.Payload)!;
                 await publishEndpoint.Publish(evento, cancellationToken);
                 outboxRepository.MarcarPublicado(entry);
+                publicados++;
             }
             catch (Exception ex)
             {
@@ -57,5 +64,14 @@ public sealed class OutboxRelayService(
         }
 
         await unitOfWork.CommitAsync(cancellationToken);
+
+        if (publicados > 0)
+            metrics.OutboxPublicadosTotal.Add(publicados);
+
+        var (totalPendentes, maisAntigo) = await outboxRepository.ObterEstadoPendentesAsync(cancellationToken);
+        var idadeMaxima = maisAntigo.HasValue
+            ? (DateTime.UtcNow - maisAntigo.Value).TotalSeconds
+            : 0;
+        metrics.AtualizarEstadoOutbox(totalPendentes, idadeMaxima);
     }
 }

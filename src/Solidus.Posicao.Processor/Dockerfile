@@ -8,11 +8,8 @@ COPY . .
 WORKDIR "/src/src/Solidus.Posicao.Processor"
 RUN dotnet publish -c Release -o /app/publish --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
 WORKDIR /app
-EXPOSE 8082
-
-ENV ASPNETCORE_URLS=http://+:8082
 
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "Solidus.Posicao.Processor.dll"]

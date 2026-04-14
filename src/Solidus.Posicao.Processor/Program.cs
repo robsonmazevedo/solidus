@@ -1,6 +1,10 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Solidus.Posicao.Processor.Infrastructure.Consumers;
+using Solidus.Posicao.Processor.Infrastructure.Metrics;
 using Solidus.Posicao.Processor.Infrastructure.HealthChecks;
 using Solidus.Contracts.Events;
 using Solidus.Posicao.Processor.Infrastructure.Persistence;
@@ -17,6 +21,8 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+builder.Services.AddSingleton<ProcessorMetrics>();
 
 builder.Services.AddMassTransit(x =>
 {
@@ -42,6 +48,22 @@ builder.Services.AddMassTransit(x =>
 
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");
+
+var otlpEndpoint = builder.Configuration["Otlp:Endpoint"];
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("posicao-processor"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddSource("MassTransit")
+            .AddEntityFrameworkCoreInstrumentation();
+        if (otlpEndpoint is not null)
+            tracing.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+    })
+    .WithMetrics(metrics => metrics
+        .AddMeter(ProcessorMetrics.MeterName)
+        .AddPrometheusHttpListener(o =>
+            o.UriPrefixes = new[] { builder.Configuration["Prometheus:Endpoint"]! }));
 
 var host = builder.Build();
 
