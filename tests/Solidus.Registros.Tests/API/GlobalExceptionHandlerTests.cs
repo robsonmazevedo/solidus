@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Solidus.Registros.API.API;
+using Solidus.Registros.API.Infrastructure.Metrics;
 
 namespace Solidus.Registros.Tests.API;
 
@@ -16,7 +17,7 @@ public sealed class GlobalExceptionHandlerTests
     [Fact]
     public async Task TryHandleAsync_ArgumentException_Retorna422()
     {
-        var handler = new GlobalExceptionHandler();
+        var handler = new GlobalExceptionHandler(new RegistrosMetrics());
         var context = CriarContext();
 
         var result = await handler.TryHandleAsync(context, new ArgumentException("valor inválido"), CancellationToken.None);
@@ -28,7 +29,7 @@ public sealed class GlobalExceptionHandlerTests
     [Fact]
     public async Task TryHandleAsync_ExcecaoGenerica_Retorna500()
     {
-        var handler = new GlobalExceptionHandler();
+        var handler = new GlobalExceptionHandler(new RegistrosMetrics());
         var context = CriarContext();
 
         var result = await handler.TryHandleAsync(context, new InvalidOperationException("erro interno"), CancellationToken.None);

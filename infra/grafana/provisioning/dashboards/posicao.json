@@ -109,7 +109,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(posicao_http_duracao_segundos_bucket[1m])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(posicao_http_duracao_segundos_seconds_bucket[1m])))",
           "legendFormat": "p99",
           "refId": "A"
         }

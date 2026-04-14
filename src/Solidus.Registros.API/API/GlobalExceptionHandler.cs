@@ -1,15 +1,18 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Solidus.Registros.API.Infrastructure.Metrics;
 
 namespace Solidus.Registros.API.API;
 
-public sealed class GlobalExceptionHandler : IExceptionHandler
+public sealed class GlobalExceptionHandler(RegistrosMetrics metrics) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
         HttpContext context,
         Exception exception,
         CancellationToken cancellationToken)
     {
+        metrics.LancamentosErroTotal.Add(1);
+
         var (status, title) = exception switch
         {
             ArgumentException => (StatusCodes.Status422UnprocessableEntity, "Requisição inválida"),

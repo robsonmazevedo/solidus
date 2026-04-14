@@ -96,6 +96,14 @@ app.UseExceptionHandler();
 
 app.Use(async (ctx, next) =>
 {
+    ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    ctx.Response.Headers["X-Frame-Options"] = "DENY";
+    ctx.Response.Headers["Strict-Transport-Security"] = "max-age=31536000";
+    await next(ctx);
+});
+
+app.Use(async (ctx, next) =>
+{
     var metrics = ctx.RequestServices.GetRequiredService<PosicaoMetrics>();
     var sw = System.Diagnostics.Stopwatch.StartNew();
     await next(ctx);
