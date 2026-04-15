@@ -3,13 +3,13 @@ using Solidus.Posicao.API.Infrastructure.Persistence;
 
 namespace Solidus.Posicao.API.Infrastructure.HealthChecks;
 
-public sealed class DatabaseHealthCheck(PosicaoReadDbContext context) : IHealthCheck
+public sealed class DatabaseHealthCheck(PosicaoReadDbContext dbContext) : IHealthCheck
 {
-    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext ctx, CancellationToken ct = default)
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         try
         {
-            await context.Database.CanConnectAsync(ct);
+            await dbContext.Database.CanConnectAsync(cancellationToken);
             return HealthCheckResult.Healthy();
         }
         catch (Exception ex)

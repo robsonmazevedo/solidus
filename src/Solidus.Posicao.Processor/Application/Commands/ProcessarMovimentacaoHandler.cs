@@ -13,9 +13,9 @@ public sealed class ProcessarMovimentacaoHandler(
     IUnitOfWork unitOfWork,
     ProcessorMetrics metrics) : IRequestHandler<ProcessarMovimentacaoCommand>
 {
-    public async Task Handle(ProcessarMovimentacaoCommand cmd, CancellationToken ct)
+    public async Task Handle(ProcessarMovimentacaoCommand cmd, CancellationToken cancellationToken)
     {
-        if (await eventoRepo.ExisteAsync(cmd.EventoId, ct))
+        if (await eventoRepo.ExisteAsync(cmd.EventoId, cancellationToken))
         {
             metrics.EventosDuplicadosTotal.Add(1);
             return;
@@ -23,15 +23,15 @@ public sealed class ProcessarMovimentacaoHandler(
 
         var sw = Stopwatch.StartNew();
 
-        var posicao = await posicaoRepo.ObterOuCriarAsync(cmd.ComercianteId, cmd.DataCompetencia, ct);
+        var posicao = await posicaoRepo.ObterOuCriarAsync(cmd.ComercianteId, cmd.DataCompetencia, cancellationToken);
         posicao.AplicarMovimentacao(cmd.Tipo, cmd.Valor);
 
         var evento = EventoProcessado.Registrar(cmd.EventoId, "MovimentacaoRegistrada");
-        await eventoRepo.AdicionarAsync(evento, ct);
+        await eventoRepo.AdicionarAsync(evento, cancellationToken);
 
         try
         {
-            await unitOfWork.CommitAsync(ct);
+            await unitOfWork.CommitAsync(cancellationToken);
             sw.Stop();
             metrics.EventosProcessadosTotal.Add(1);
             metrics.DuracaoProcessamentoSegundos.Record(sw.Elapsed.TotalSeconds);

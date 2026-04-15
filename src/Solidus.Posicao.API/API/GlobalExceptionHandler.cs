@@ -6,9 +6,9 @@ namespace Solidus.Posicao.API.API;
 public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
-        HttpContext ctx,
+        HttpContext httpContext,
         Exception exception,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         logger.LogError(exception, "Erro não tratado");
 
@@ -25,8 +25,8 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             Detail = exception.Message
         };
 
-        ctx.Response.StatusCode = status;
-        await ctx.Response.WriteAsJsonAsync(problem, ct);
+        httpContext.Response.StatusCode = status;
+        await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
         return true;
     }
 }

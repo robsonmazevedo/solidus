@@ -12,11 +12,11 @@ public sealed class ConsultarPosicaoDiariaHandler(
     IPosicaoDiariaReadRepository repository,
     PosicaoMetrics metrics) : IRequestHandler<ConsultarPosicaoDiariaQuery, PosicaoDiariaDto>
 {
-    public async Task<PosicaoDiariaDto> Handle(ConsultarPosicaoDiariaQuery query, CancellationToken ct)
+    public async Task<PosicaoDiariaDto> Handle(ConsultarPosicaoDiariaQuery query, CancellationToken cancellationToken)
     {
         metrics.ConsultasTotal.Add(1);
 
-        var cached = await cache.ObterAsync(query.ComercianteId, query.Data, ct);
+        var cached = await cache.ObterAsync(query.ComercianteId, query.Data, cancellationToken);
         if (cached is not null)
         {
             metrics.CacheHitTotal.Add(1);
@@ -25,7 +25,7 @@ public sealed class ConsultarPosicaoDiariaHandler(
 
         metrics.CacheMissTotal.Add(1);
 
-        var posicao = await repository.ObterAsync(query.ComercianteId, query.Data, ct);
+        var posicao = await repository.ObterAsync(query.ComercianteId, query.Data, cancellationToken);
 
         if (posicao is null)
             return new PosicaoDiariaDto(query.Data, 0, 0, 0, DateTime.UtcNow);
@@ -37,7 +37,7 @@ public sealed class ConsultarPosicaoDiariaHandler(
             posicao.Saldo,
             posicao.AtualizadoEm);
 
-        await cache.GravarAsync(query.ComercianteId, query.Data, dto, ct);
+        await cache.GravarAsync(query.ComercianteId, query.Data, dto, cancellationToken);
 
         return dto;
     }

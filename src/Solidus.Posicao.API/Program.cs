@@ -96,9 +96,9 @@ app.UseExceptionHandler();
 
 app.Use(async (ctx, next) =>
 {
-    ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    ctx.Response.Headers["X-Frame-Options"] = "DENY";
-    ctx.Response.Headers["Strict-Transport-Security"] = "max-age=31536000";
+    ctx.Response.Headers.XContentTypeOptions = "nosniff";
+    ctx.Response.Headers.XFrameOptions = "DENY";
+    ctx.Response.Headers.StrictTransportSecurity = "max-age=31536000";
     await next(ctx);
 });
 
