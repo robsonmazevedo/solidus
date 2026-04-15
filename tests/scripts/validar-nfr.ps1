@@ -13,7 +13,9 @@ $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $rootDir      = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
-$composeApp   = Join-Path $rootDir "docker-compose.app.yml"
+$composeEnv   = Join-Path $rootDir "config/.env"
+$composeApp   = Join-Path $rootDir "config/docker-compose.app.yml"
+$composeArgs  = @("compose", "--project-directory", $rootDir, "--env-file", $composeEnv, "-f", $composeApp)
 
 function ConvertTo-Base64Url([byte[]]$bytes) {
     [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
@@ -45,7 +47,7 @@ $chave   = "nfr-001-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
 
 # Passo 1: para os serviços de Posição
 Write-Host "[1/5] Parando posicao-api e posicao-processor..." -ForegroundColor Yellow
-docker compose -f $composeApp stop posicao-api posicao-processor
+docker @composeArgs stop posicao-api posicao-processor
 Write-Host "      OK" -ForegroundColor Green
 
 # Passo 2: registra lançamento com Posição indisponível
@@ -83,7 +85,7 @@ try {
 # Passo 3: reinicia os serviços de Posição
 Write-Host ""
 Write-Host "[3/5] Reiniciando posicao-api e posicao-processor..." -ForegroundColor Yellow
-docker compose -f $composeApp start posicao-api posicao-processor
+docker @composeArgs start posicao-api posicao-processor
 Write-Host "      Aguardando inicializacao (20s)..."
 Start-Sleep -Seconds 20
 Write-Host "      OK" -ForegroundColor Green

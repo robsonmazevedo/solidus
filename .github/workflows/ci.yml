@@ -6,14 +6,16 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'infra/**'
-      - 'docker-compose*.yml'
+      - 'config/docker-compose*.yml'
+      - 'config/.env.example'
       - 'README.md'
   pull_request:
     branches: [main]
     paths-ignore:
       - 'docs/**'
       - 'infra/**'
-      - 'docker-compose*.yml'
+      - 'config/docker-compose*.yml'
+      - 'config/.env.example'
       - 'README.md'
 
 env:

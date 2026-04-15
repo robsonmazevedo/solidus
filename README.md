@@ -159,22 +159,24 @@ infra/
 ### 1. Configure o ambiente
 
 ```bash
-cp .env.example .env
+cp config/.env.example config/.env
 ```
 
-Os valores padrão do `.env.example` já funcionam para ambiente local.
+Os valores padrão de `config/.env.example` já funcionam para ambiente local.
+
+Todos os comandos de Docker Compose abaixo assumem execução a partir da raiz do repositório e usam `--env-file config/.env` explicitamente.
 
 ### 2. Suba as stacks em ordem
 
 ```bash
 # Infraestrutura: PostgreSQL, RabbitMQ, Redis
-docker compose -f docker-compose.yml up -d
+docker compose --project-directory . --env-file config/.env -f config/docker-compose.yml up -d
 
 # Observabilidade: Jaeger, Prometheus, Grafana
-docker compose -f docker-compose.obs.yml up -d
+docker compose --project-directory . --env-file config/.env -f config/docker-compose.obs.yml up -d
 
 # Serviços .NET: Registros API, Posicao API, Posicao Processor
-docker compose -f docker-compose.app.yml up -d
+docker compose --project-directory . --env-file config/.env -f config/docker-compose.app.yml up -d
 ```
 
 ### 3. Valide que está funcionando
@@ -196,10 +198,10 @@ Se quiser inspecionar o ambiente completo, suba também as ferramentas auxiliare
 |:---|:---|:---|
 | Registros API | http://localhost:8080/scalar/v1 | JWT obrigatório |
 | Posição API | http://localhost:8081/scalar/v1 | JWT obrigatório |
-| Grafana | http://localhost:3000 | credenciais no `.env` |
+| Grafana | http://localhost:3000 | credenciais no `config/.env` |
 | Prometheus | http://localhost:9090 | sem autenticação |
 | Jaeger | http://localhost:16686 | sem autenticação |
-| RabbitMQ | http://localhost:15672 | credenciais no `.env` |
+| RabbitMQ | http://localhost:15672 | credenciais no `config/.env` |
 
 ---
 
@@ -260,7 +262,7 @@ Quando não há lançamentos no dia, retorna zeros. Datas futuras retornam `422`
 
 O `comerciante_id` do token é o único filtro aceito pelos endpoints.
 
-Para gerar um token de desenvolvimento, use [jwt.io](https://jwt.io) com os valores de `JWT_SECRET` e `JWT_ISSUER` definidos no `.env`:
+Para gerar um token de desenvolvimento, use [jwt.io](https://jwt.io) com os valores de `JWT_SECRET` e `JWT_ISSUER` definidos no `config/.env`:
 
 ```json
 {
@@ -287,12 +289,12 @@ O Prometheus coleta métricas de 5 targets: `registros-api`, `posicao-api`, `pos
 ### Ferramentas de inspeção
 
 ```bash
-docker compose -f docker-compose.tools.yml up -d
+docker compose --project-directory . --env-file config/.env -f config/docker-compose.tools.yml up -d
 ```
 
 | Ferramenta | URL | Acesso |
 |:---|:---|:---|
-| pgAdmin | http://localhost:8084 | credenciais no `.env` |
+| pgAdmin | http://localhost:8084 | credenciais no `config/.env` |
 | RedisInsight | http://localhost:5540 | sem autenticação |
 | SonarQube | http://localhost:9000 | padrão da ferramenta, alterar no primeiro acesso |
 

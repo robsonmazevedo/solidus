@@ -62,11 +62,11 @@
   </Folder>
   <Folder Name="/config/">
     <File Path=".dockerignore" />
-    <File Path=".env.example" />
     <File Path=".gitignore" />
-    <File Path="docker-compose.yml" />
-    <File Path="docker-compose.app.yml" />
-    <File Path="docker-compose.obs.yml" />
-    <File Path="docker-compose.tools.yml" />
+    <File Path="config/.env.example" />
+    <File Path="config/docker-compose.yml" />
+    <File Path="config/docker-compose.app.yml" />
+    <File Path="config/docker-compose.obs.yml" />
+    <File Path="config/docker-compose.tools.yml" />
   </Folder>
 </Solution>

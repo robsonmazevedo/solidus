@@ -5,7 +5,7 @@ services:
   # ── Bancos de dados ──────────────────────────────────────────────────────
 
   postgres-registros:
-    image: postgres:16-alpine
+    image: postgres:18.3-alpine
     container_name: solidus-postgres-registros
     environment:
       POSTGRES_DB: ${POSTGRES_REGISTROS_DB}
@@ -24,7 +24,7 @@ services:
       - solidus
 
   postgres-posicao:
-    image: postgres:16-alpine
+    image: postgres:18.3-alpine
     container_name: solidus-postgres-posicao
     environment:
       POSTGRES_DB: ${POSTGRES_POSICAO_DB}
@@ -45,7 +45,7 @@ services:
   # ── Broker ───────────────────────────────────────────────────────────────
 
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:4.2.5-management-alpine
     container_name: solidus-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
@@ -68,7 +68,7 @@ services:
   # ── Cache ────────────────────────────────────────────────────────────────
 
   redis:
-    image: redis:7-alpine
+    image: redis:8.6.2-alpine
     container_name: solidus-redis
     ports:
       - "${PORT_REDIS}:6379"

@@ -128,4 +128,4 @@ Nenhuma credencial é embutida no código ou nos arquivos de configuração vers
 | `JWT_SECRET` | Chave para validação da assinatura dos tokens JWT |
 | `JWT_ISSUER` | Emissor esperado nos tokens recebidos |
 
-O repositório contém um arquivo `.env.example` com todas as variáveis necessárias e valores fictícios como referência. O arquivo `.env` real está no `.gitignore` e nunca é versionado.
+O repositório contém um arquivo `config/.env.example` com todas as variáveis necessárias e valores fictícios como referência. O arquivo `config/.env` real está no `.gitignore` e nunca é versionado.

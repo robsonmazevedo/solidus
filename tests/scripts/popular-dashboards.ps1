@@ -7,7 +7,10 @@
 #   [4/5] Aguarda OutboxRelay -> RabbitMQ -> Processor
 #   [5/5] Consulta posicao diaria    -> Dashboard 2: throughput, latencia, cache hit/miss
 #
-# Pre-requisito: docker compose up -d
+# Pre-requisito:
+#   docker compose --project-directory . --env-file config/.env -f config/docker-compose.yml up -d
+#   docker compose --project-directory . --env-file config/.env -f config/docker-compose.obs.yml up -d
+#   docker compose --project-directory . --env-file config/.env -f config/docker-compose.app.yml up -d
 # Execute da raiz do repositorio: .\tests\scripts\popular-dashboards.ps1
 
 param(
@@ -65,7 +68,7 @@ try {
     Write-Host "      registros-api: OK ($($r.StatusCode))" -ForegroundColor Green
 } catch {
     Write-Host "      registros-api: FALHOU - $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "      Verifique se o ambiente esta rodando: docker compose up -d" -ForegroundColor Red
+    Write-Host "      Verifique se o ambiente esta rodando com os comandos de docker compose da secao Inicio rapido do README." -ForegroundColor Red
     exit 1
 }
 
@@ -74,7 +77,7 @@ try {
     Write-Host "      posicao-api  : OK ($($r.StatusCode))" -ForegroundColor Green
 } catch {
     Write-Host "      posicao-api  : FALHOU - $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "      Verifique se o ambiente esta rodando: docker compose up -d" -ForegroundColor Red
+    Write-Host "      Verifique se o ambiente esta rodando com os comandos de docker compose da secao Inicio rapido do README." -ForegroundColor Red
     exit 1
 }
 
@@ -224,5 +227,5 @@ Write-Host "  Dashboard 2 - Posicao:" -ForegroundColor Yellow
 Write-Host "    $GrafanaUrl/d/solidus-posicao" -ForegroundColor White
 Write-Host "    Paineis: Throughput, Latencia p99, Cache hit rate, Fila RabbitMQ, Processor" -ForegroundColor DarkGray
 Write-Host ""
-Write-Host "  Login Grafana: admin / (senha configurada no .env)" -ForegroundColor DarkGray
+Write-Host "  Login Grafana: admin / (senha configurada no config/.env)" -ForegroundColor DarkGray
 Write-Host ""
