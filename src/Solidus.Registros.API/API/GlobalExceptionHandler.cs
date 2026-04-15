@@ -7,7 +7,7 @@ namespace Solidus.Registros.API.API;
 public sealed class GlobalExceptionHandler(RegistrosMetrics metrics) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
-        HttpContext context,
+        HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
     {
@@ -26,8 +26,8 @@ public sealed class GlobalExceptionHandler(RegistrosMetrics metrics) : IExceptio
             Detail = exception.Message
         };
 
-        context.Response.StatusCode = status;
-        await context.Response.WriteAsJsonAsync(problem, cancellationToken);
+        httpContext.Response.StatusCode = status;
+        await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
         return true;
     }
 }

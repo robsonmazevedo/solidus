@@ -20,7 +20,7 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8081';
 const TOKEN    = __ENV.TOKEN;
 
-export default function () {
+export default function executarConsultaPosicao() {
   const hoje = new Date().toISOString().split('T')[0];
   const res  = http.get(`${BASE_URL}/posicao/diaria?data=${hoje}`, {
     headers: { 'Authorization': `Bearer ${TOKEN}` },

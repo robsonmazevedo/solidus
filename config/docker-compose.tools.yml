@@ -5,7 +5,7 @@ services:
   # ── Banco de dados ────────────────────────────────────────────────────────
 
   pgadmin:
-    image: dpage/pgadmin4:8
+    image: dpage/pgadmin4:9.14.0
     container_name: solidus-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
@@ -20,7 +20,7 @@ services:
   # ── Cache ─────────────────────────────────────────────────────────────────
 
   redisinsight:
-    image: redis/redisinsight:2.50
+    image: redis/redisinsight:3.2.0
     container_name: solidus-redisinsight
     ports:
       - "${PORT_REDISINSIGHT}:5540"
@@ -32,7 +32,7 @@ services:
   # ── Qualidade de código ───────────────────────────────────────────────────
 
   sonarqube:
-    image: sonarqube:10.5-community
+    image: sonarqube:26.4.0.121862-community
     container_name: solidus-sonarqube
     environment:
       SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
