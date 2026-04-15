@@ -53,6 +53,10 @@ Generated\ Files/
 [Bb]uild[Ll]og.*
 *.trx
 
+# Sonar
+.sonarqube/
+.scannerwork/
+
 # NUnit
 *.VisualState.xml
 TestResult.xml
