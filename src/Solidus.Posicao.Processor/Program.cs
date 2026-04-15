@@ -73,4 +73,4 @@ using (var scope = host.Services.CreateScope())
     await db.Database.MigrateAsync();
 }
 
-host.Run();
+await host.RunAsync();

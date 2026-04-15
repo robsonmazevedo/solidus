@@ -20,10 +20,10 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 const TOKEN    = __ENV.TOKEN;
 
-export default function () {
+export default function executarRegistroLancamento() {
   const payload = JSON.stringify({
     tipo:              'CREDITO',
-    valor:             100.00,
+    valor:             100,
     dataCompetencia:   new Date().toISOString().split('T')[0],
     chaveIdempotencia: `k6-vu${__VU}-iter${__ITER}`,
   });

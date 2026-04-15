@@ -305,6 +305,19 @@ $env:SONAR_TOKEN = "token-gerado-no-sonarqube"
 .\tests\scripts\executar-sonar.ps1
 ```
 
+Para exportar as issues abertas e security hotspots para arquivos locais, execute:
+
+```powershell
+$env:SONAR_TOKEN = "token-gerado-no-sonarqube"
+.\tests\scripts\exportar-sonar.ps1
+```
+
+Os arquivos serão gerados em `sonar-export/`:
+
+- `issues.json`
+- `hotspots.json`
+- `summary.md`
+
 ---
 
 <a id="testes"></a>

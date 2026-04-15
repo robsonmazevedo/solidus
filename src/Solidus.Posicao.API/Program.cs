@@ -123,4 +123,4 @@ app.MapControllers();
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapPrometheusScrapingEndpoint("/metrics").AllowAnonymous();
 
-app.Run();
+await app.RunAsync();
