@@ -312,13 +312,13 @@ $env:SONAR_TOKEN = "token-gerado-no-sonarqube"
 dotnet test Solidus.slnx
 ```
 
-68 testes distribuídos em 3 projetos, cobrindo domínio, handlers, controllers, repositórios e isolamento por `comerciante_id`.
+Os testes estão organizados em 3 projetos, cobrindo domínio, handlers, controllers, repositórios e isolamento por `comerciante_id`.
 
-| Projeto | Testes |
-|:---|:---:|
-| Solidus.Registros.Tests | 40 |
-| Solidus.Posicao.API.Tests | 12 |
-| Solidus.Posicao.Processor.Tests | 16 |
+| Projeto |
+|:---|
+| Solidus.Registros.Tests |
+| Solidus.Posicao.API.Tests |
+| Solidus.Posicao.Processor.Tests |
 
 ### Validação do NFR principal
 
@@ -357,6 +357,8 @@ O script para a Posição, registra um lançamento, reinicia os serviços e agua
 | [docs/arquitetura/escalabilidade.md](docs/arquitetura/escalabilidade.md) | Estratégia de escala |
 | [docs/arquitetura/observabilidade.md](docs/arquitetura/observabilidade.md) | Métricas, logs e traces |
 | [docs/arquitetura/seguranca.md](docs/arquitetura/seguranca.md) | Aspectos de segurança |
+| [docs/arquitetura/transicao.md](docs/arquitetura/transicao.md) | Estratégia de migração incremental do legado para o Solidus |
+| [docs/arquitetura/evolucoes.md](docs/arquitetura/evolucoes.md) | Evoluções futuras e caminhos técnicos possíveis |
 
 ### ADRs
 
