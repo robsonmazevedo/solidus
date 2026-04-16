@@ -1,21 +1,21 @@
 output "container_registry_name" {
   description = "Nome do Azure Container Registry."
-  value       = azurerm_container_registry.main.name
+  value       = data.azurerm_container_registry.main.name
 }
 
 output "container_registry_login_server" {
   description = "Login server do Azure Container Registry."
-  value       = azurerm_container_registry.main.login_server
+  value       = data.azurerm_container_registry.main.login_server
 }
 
 output "container_registry_admin_username" {
   description = "Usuário admin do ACR para cenários iniciais de build/push."
-  value       = azurerm_container_registry.main.admin_username
+  value       = data.azurerm_container_registry.main.admin_username
 }
 
 output "container_registry_admin_password" {
   description = "Senha admin do ACR para cenários iniciais de build/push."
-  value       = azurerm_container_registry.main.admin_password
+  value       = data.azurerm_container_registry.main.admin_password
   sensitive   = true
 }
 

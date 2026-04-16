@@ -8,6 +8,7 @@ locals {
   rabbitmq_app_name                    = "rabbitmq-${var.workload}-${var.environment}-${var.location_short}"
   pgadmin_app_name                     = "pgadmin-${var.workload}-${var.environment}-${var.location_short}"
   redisinsight_app_name                = "redisinsight-${var.workload}-${var.environment}-${var.location_short}"
+  state_resource_group_name            = "rg-${var.workload}-${var.environment}-${var.location_short}-tfstate"
   container_registry_name              = "acr${var.workload}${var.environment}${var.location_short}"
   registros_api_name                   = "registros-api-${var.workload}-${var.environment}-${var.location_short}"
   posicao_api_name                     = "posicao-api-${var.workload}-${var.environment}-${var.location_short}"
@@ -79,8 +80,9 @@ module "runtime" {
   resource_group_name          = module.foundation.resource_group_name
   location                     = var.location
   container_app_environment_id = module.platform.container_app_environment_id
-  container_registry_name      = local.container_registry_name
-  container_registry_sku       = var.container_registry_sku
+  container_registry_name                = local.container_registry_name
+  container_registry_resource_group_name = local.state_resource_group_name
+  container_registry_sku                 = var.container_registry_sku
   enable_application_apps      = var.enable_application_apps
   app_environment              = var.app_environment
   jwt_issuer                   = var.jwt_issuer

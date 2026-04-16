@@ -18,6 +18,11 @@ variable "container_registry_name" {
   type        = string
 }
 
+variable "container_registry_resource_group_name" {
+  description = "Resource group onde o ACR compartilhado foi criado."
+  type        = string
+}
+
 variable "container_registry_sku" {
   description = "SKU do Azure Container Registry."
   type        = string

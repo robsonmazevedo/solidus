@@ -4,17 +4,9 @@ resource "random_password" "jwt_secret" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-resource "azurerm_container_registry" "main" {
-  name                          = var.container_registry_name
-  resource_group_name           = var.resource_group_name
-  location                      = var.location
-  sku                           = var.container_registry_sku
-  admin_enabled                 = true
-  public_network_access_enabled = true
-
-  tags = merge(var.tags, {
-    component = "acr"
-  })
+data "azurerm_container_registry" "main" {
+  name                = var.container_registry_name
+  resource_group_name = var.container_registry_resource_group_name
 }
 
 resource "azurerm_container_app" "registros_api" {
@@ -27,7 +19,7 @@ resource "azurerm_container_app" "registros_api" {
 
   secret {
     name  = "acr-password"
-    value = azurerm_container_registry.main.admin_password
+    value = data.azurerm_container_registry.main.admin_password
   }
 
   secret {
@@ -46,8 +38,8 @@ resource "azurerm_container_app" "registros_api" {
   }
 
   registry {
-    server               = azurerm_container_registry.main.login_server
-    username             = azurerm_container_registry.main.admin_username
+    server               = data.azurerm_container_registry.main.login_server
+    username             = data.azurerm_container_registry.main.admin_username
     password_secret_name = "acr-password"
   }
 
@@ -166,7 +158,7 @@ resource "azurerm_container_app" "posicao_api" {
 
   secret {
     name  = "acr-password"
-    value = azurerm_container_registry.main.admin_password
+    value = data.azurerm_container_registry.main.admin_password
   }
 
   secret {
@@ -185,8 +177,8 @@ resource "azurerm_container_app" "posicao_api" {
   }
 
   registry {
-    server               = azurerm_container_registry.main.login_server
-    username             = azurerm_container_registry.main.admin_username
+    server               = data.azurerm_container_registry.main.login_server
+    username             = data.azurerm_container_registry.main.admin_username
     password_secret_name = "acr-password"
   }
 
@@ -295,7 +287,7 @@ resource "azurerm_container_app" "posicao_processor" {
 
   secret {
     name  = "acr-password"
-    value = azurerm_container_registry.main.admin_password
+    value = data.azurerm_container_registry.main.admin_password
   }
 
   secret {
@@ -309,8 +301,8 @@ resource "azurerm_container_app" "posicao_processor" {
   }
 
   registry {
-    server               = azurerm_container_registry.main.login_server
-    username             = azurerm_container_registry.main.admin_username
+    server               = data.azurerm_container_registry.main.login_server
+    username             = data.azurerm_container_registry.main.admin_username
     password_secret_name = "acr-password"
   }
 
