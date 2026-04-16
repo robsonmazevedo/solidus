@@ -1,0 +1,339 @@
+name: "🚀 Solidus Delivery"
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'config/docker-compose*.yml'
+      - 'config/.env.example'
+      - 'README.md'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'config/docker-compose*.yml'
+      - 'config/.env.example'
+      - 'README.md'
+
+env:
+  TF_IN_AUTOMATION: 'true'
+
+jobs:
+  terraform-bootstrap:
+    name: "🏗️ Bootstrap Terraform"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/terraform/environments/dev
+
+    steps:
+      - name: "📥 Checkout do código"
+        uses: actions/checkout@v6
+
+      - name: "🔐 Login no Azure"
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "⚙️ Configurar Terraform"
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.14.0
+
+      - name: "🧱 Garantir backend remoto e ACR"
+        run: |
+          set -euo pipefail
+
+          echo "Provisionando resource group do state..."
+          az group create \
+            --name "${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            --location "${{ vars.AZURE_LOCATION }}" \
+            >/dev/null
+
+          echo "Garantindo storage account do state..."
+          if ! az storage account show \
+            --name "${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            --resource-group "${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            >/dev/null 2>&1; then
+            az storage account create \
+              --name "${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+              --resource-group "${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+              --location "${{ vars.AZURE_LOCATION }}" \
+              --sku Standard_LRS \
+              --kind StorageV2 \
+              --min-tls-version TLS1_2 \
+              >/dev/null
+          fi
+
+          ACCOUNT_KEY="$(az storage account keys list \
+            --resource-group "${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            --account-name "${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            --query "[0].value" -o tsv)"
+
+          echo "Garantindo container do state..."
+          az storage container create \
+            --name "${{ vars.TF_STATE_CONTAINER }}" \
+            --account-name "${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            --account-key "$ACCOUNT_KEY" \
+            >/dev/null
+
+          echo "Garantindo ACR para publicação das imagens..."
+          ACR_NAME="${{ vars.ACR_LOGIN_SERVER }}"
+          ACR_NAME="${ACR_NAME%%.*}"
+          if ! az acr show --name "$ACR_NAME" --resource-group "${{ vars.TF_STATE_RESOURCE_GROUP }}" >/dev/null 2>&1; then
+            az acr create \
+              --name "$ACR_NAME" \
+              --resource-group "${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+              --location "${{ vars.AZURE_LOCATION }}" \
+              --sku Basic \
+              --admin-enabled true \
+              >/dev/null
+          fi
+
+      - name: "🏁 Inicializar backend"
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=${{ vars.TF_STATE_KEY }}" \
+            -backend-config="use_azuread_auth=true" \
+            -backend-config="use_cli=true"
+
+  build-and-test:
+    name: "🧪 Build & Tests"
+    needs: terraform-bootstrap
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+      - name: "📥 Checkout do código"
+        uses: actions/checkout@v6
+
+      - name: "🧰 Configurar .NET 10"
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      - name: "📦 Restaurar dependências"
+        run: dotnet restore Solidus.slnx
+
+      - name: "🏗️ Compilar solução"
+        run: dotnet build Solidus.slnx -c Release --no-restore
+
+      - name: "🧪 Executar testes"
+        run: >
+          dotnet test Solidus.slnx
+          -c Release
+          --no-build
+          --logger trx
+          --collect "XPlat Code Coverage"
+          --results-directory ./TestResults
+
+      - name: "📊 Publicar resultados dos testes"
+        uses: dorny/test-reporter@v3
+        if: always()
+        with:
+          name: Testes unitarios
+          path: TestResults/**/*.trx
+          reporter: dotnet-trx
+
+      - name: "🧾 Enviar cobertura"
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: cobertura
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
+
+  publish-images:
+    name: "📦 Publish Images"
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository
+    environment:
+      name: env-solidus-dev
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: "📥 Checkout do código"
+        uses: actions/checkout@v6
+
+      - name: "🔐 Login no Azure"
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "🐳 Configurar Docker Buildx"
+        uses: docker/setup-buildx-action@v4
+
+      - name: "🔓 Login no ACR"
+        shell: bash
+        run: |
+          ACR_NAME="${{ vars.ACR_LOGIN_SERVER }}"
+          ACR_NAME="${ACR_NAME%%.*}"
+          az acr login --name "$ACR_NAME"
+
+      - name: "📦 Publicar Registros API"
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: src/Solidus.Registros.API/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ vars.ACR_LOGIN_SERVER }}/solidus/registros-api:latest
+
+      - name: "📦 Publicar Posicao API"
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: src/Solidus.Posicao.API/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-api:latest
+
+      - name: "📦 Publicar Posicao Processor"
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: src/Solidus.Posicao.Processor/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-processor:latest
+
+  terraform-plan:
+    name: "📐 Terraform Plan"
+    needs: publish-images
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/terraform/environments/dev
+
+    steps:
+      - name: "📥 Checkout do código"
+        uses: actions/checkout@v6
+
+      - name: "🔐 Login no Azure"
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "⚙️ Configurar Terraform"
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.14.0
+
+      - name: "🏁 Inicializar backend"
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=${{ vars.TF_STATE_KEY }}" \
+            -backend-config="use_azuread_auth=true" \
+            -backend-config="use_cli=true"
+
+      - name: "✅ Validar configuração"
+        run: terraform validate
+
+      - name: "🧮 Gerar plano"
+        run: |
+          set -o pipefail
+          terraform plan -no-color -input=false -out=tfplan \
+            -var="enable_application_apps=true" \
+            -var="registros_api_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/registros-api:latest" \
+            -var="posicao_api_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-api:latest" \
+            -var="posicao_processor_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-processor:latest" \
+            2>&1 | tee tfplan.log
+
+      - name: "📄 Exportar resumo do plano"
+        if: success()
+        run: terraform show -no-color tfplan > tfplan.txt
+
+      - name: "📤 Publicar artefato do plano"
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: terraform-plan-dev
+          path: |
+            infra/terraform/environments/dev/tfplan
+            infra/terraform/environments/dev/tfplan.txt
+            infra/terraform/environments/dev/tfplan.log
+          if-no-files-found: warn
+
+  terraform-apply:
+    name: "✅ Terraform Apply"
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    environment:
+      name: env-solidus-dev
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/terraform/environments/dev
+
+    steps:
+      - name: "📥 Checkout do código"
+        uses: actions/checkout@v6
+
+      - name: "🔐 Login no Azure"
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "⚙️ Configurar Terraform"
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.14.0
+
+      - name: "🏁 Inicializar backend"
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=${{ vars.TF_STATE_KEY }}" \
+            -backend-config="use_azuread_auth=true" \
+            -backend-config="use_cli=true"
+
+      - name: "📥 Baixar plano aprovado"
+        uses: actions/download-artifact@v8
+        with:
+          name: terraform-plan-dev
+          path: infra/terraform/environments/dev
+
+      - name: "🚀 Aplicar infraestrutura"
+        run: terraform apply -input=false tfplan

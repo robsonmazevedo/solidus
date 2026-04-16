@@ -3,28 +3,73 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: registros-api
+  - job_name: "01 - API Registros"
     static_configs:
       - targets: ["registros-api:8080"]
+        labels:
+          service: "api-registros"
     metrics_path: /metrics
+    relabel_configs:
+      - target_label: instance
+        replacement: "API Registros"
 
-  - job_name: posicao-api
+  - job_name: "02 - API Posicao"
     static_configs:
       - targets: ["posicao-api:8080"]
+        labels:
+          service: "api-posicao"
     metrics_path: /metrics
+    relabel_configs:
+      - target_label: instance
+        replacement: "API Posicao"
 
-  - job_name: posicao-processor
+  - job_name: "03 - Worker de Posicao"
     static_configs:
       - targets: ["posicao-processor:8082"]
+        labels:
+          service: "worker-posicao"
     metrics_path: /metrics
+    relabel_configs:
+      - target_label: instance
+        replacement: "Worker de Posicao"
 
-  - job_name: rabbitmq
+  - job_name: "04 - PostgreSQL Registros"
+    static_configs:
+      - targets: ["postgres-exporter-registros:9187"]
+        labels:
+          service: "postgres-registros"
+    metrics_path: /metrics
+    relabel_configs:
+      - target_label: instance
+        replacement: "PostgreSQL Registros"
+
+  - job_name: "05 - PostgreSQL Posicao"
+    static_configs:
+      - targets: ["postgres-exporter-posicao:9187"]
+        labels:
+          service: "postgres-posicao"
+    metrics_path: /metrics
+    relabel_configs:
+      - target_label: instance
+        replacement: "PostgreSQL Posicao"
+
+  - job_name: "06 - RabbitMQ Broker"
     scrape_interval: 5s
     static_configs:
       - targets: ["rabbitmq:15692"]
+        labels:
+          service: "rabbitmq-broker"
     metrics_path: /metrics/per-object
+    relabel_configs:
+      - target_label: instance
+        replacement: "RabbitMQ Broker"
 
-  - job_name: redis
+  - job_name: "07 - Redis Cache"
     static_configs:
       - targets: ["redis-exporter:9121"]
+        labels:
+          service: "redis-cache"
     metrics_path: /metrics
+    relabel_configs:
+      - target_label: instance
+        replacement: "Redis Cache"

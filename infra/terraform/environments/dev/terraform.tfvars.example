@@ -1,0 +1,11 @@
+project                            = "solidus"
+workload                           = "solidus"
+environment                        = "dev"
+location                           = "East US 2"
+location_short                     = "eus2"
+owner                              = "Solidus"
+cost_center                        = "TI"
+managed_by                         = "terraform"
+log_analytics_sku                  = "PerGB2018"
+log_analytics_retention_in_days    = 30
+container_apps_public_network_access = "Enabled"

@@ -1,0 +1,6 @@
+resource_group_name  = "rg-solidus-tfstate-dev"
+storage_account_name = "preencher-com-output-do-bootstrap"
+container_name       = "tfstate"
+key                  = "solidus-dev.tfstate"
+use_azuread_auth     = true
+use_cli              = true

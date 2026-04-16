@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/robsonmazevedo/solidus/actions/workflows/ci.yml">
-    <img src="https://github.com/robsonmazevedo/solidus/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  <a href="https://github.com/robsonmazevedo/solidus/actions/workflows/delivery.yml">
+    <img src="https://github.com/robsonmazevedo/solidus/actions/workflows/delivery.yml/badge.svg" alt="Delivery" />
   </a>
   &nbsp;
   <img src="https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white" alt=".NET 10" />
@@ -128,25 +128,24 @@ O caminho crítico de escrita termina no `Registros API`. A atualização da pos
 ## Estrutura do repositório
 
 ```text
-src/
-  Solidus.Registros.API/
-  Solidus.Posicao.API/
-  Solidus.Posicao.Processor/
-tests/
-  Solidus.Registros.Tests/
-  Solidus.Posicao.API.Tests/
-  Solidus.Posicao.Processor.Tests/
-  load/
-  scripts/
-docs/
-  adr/
-  arquitetura/
-  ddd/
-  requisitos/
-infra/
-  grafana/
-  prometheus/
-  rabbitmq/
+solidus/
+├── .github/                         # Workflows e automações de entrega
+│   └── workflows/
+├── config/                          # Docker Compose e configuração local
+├── docs/                            # ADRs, arquitetura, DDD e requisitos
+├── infra/                           # Observabilidade, mensageria e Terraform
+├── src/                             # Código-fonte dos serviços .NET
+│   ├── Solidus.Registros.API/       # API de lançamentos financeiros
+│   ├── Solidus.Posicao.API/         # API de consulta da posição diária
+│   └── Solidus.Posicao.Processor/   # Worker de consolidação assíncrona
+├── tests/                           # Testes, carga e scripts utilitários
+│   ├── Solidus.Registros.Tests/
+│   ├── Solidus.Posicao.API.Tests/
+│   ├── Solidus.Posicao.Processor.Tests/
+│   ├── load/
+│   └── scripts/
+├── Solidus.slnx                     # Solução principal
+└── README.md                        # Visão geral do projeto
 ```
 
 ---
