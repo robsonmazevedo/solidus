@@ -79,13 +79,13 @@ output "redisinsight_url" {
 
 output "registros_connection_string" {
   description = "Connection string do PostgreSQL de registros."
-  value       = "Host=${azurerm_container_app.postgres_registros.ingress[0].fqdn};Port=5432;Database=${var.postgres_registros_database_name};Username=${var.postgres_admin_username};Password=${random_password.postgres_registros.result}"
+  value       = "Host=${azurerm_container_app.postgres_registros.name};Port=5432;Database=${var.postgres_registros_database_name};Username=${var.postgres_admin_username};Password=${random_password.postgres_registros.result}"
   sensitive   = true
 }
 
 output "posicao_connection_string" {
   description = "Connection string do PostgreSQL de posição."
-  value       = "Host=${azurerm_container_app.postgres_posicao.ingress[0].fqdn};Port=5432;Database=${var.postgres_posicao_database_name};Username=${var.postgres_admin_username};Password=${random_password.postgres_posicao.result}"
+  value       = "Host=${azurerm_container_app.postgres_posicao.name};Port=5432;Database=${var.postgres_posicao_database_name};Username=${var.postgres_admin_username};Password=${random_password.postgres_posicao.result}"
   sensitive   = true
 }
 

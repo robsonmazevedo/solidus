@@ -86,7 +86,7 @@ module "runtime" {
   enable_application_apps      = var.enable_application_apps
   app_environment              = var.app_environment
   jwt_issuer                   = var.jwt_issuer
-  otlp_endpoint                = var.otlp_endpoint
+  otlp_endpoint                = trimspace(var.otlp_endpoint) != "" ? var.otlp_endpoint : "http://${local.jaeger_app_name}:4317"
   prometheus_endpoint          = var.prometheus_endpoint
   registros_ratelimit_permit   = var.registros_ratelimit_permit
   posicao_ratelimit_permit     = var.posicao_ratelimit_permit
