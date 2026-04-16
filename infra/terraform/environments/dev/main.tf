@@ -8,7 +8,7 @@ locals {
   rabbitmq_app_name                    = "rabbitmq-${var.workload}-${var.environment}-${var.location_short}"
   pgadmin_app_name                     = "pgadmin-${var.workload}-${var.environment}-${var.location_short}"
   redisinsight_app_name                = "redisinsight-${var.workload}-${var.environment}-${var.location_short}"
-  state_resource_group_name            = "rg-${var.workload}-${var.environment}-${var.location_short}-tfstate"
+  state_resource_group_name            = "rg-${var.workload}-tfstate-${var.environment}"
   container_registry_name              = "acr${var.workload}${var.environment}${var.location_short}"
   registros_api_name                   = "registros-api-${var.workload}-${var.environment}-${var.location_short}"
   posicao_api_name                     = "posicao-api-${var.workload}-${var.environment}-${var.location_short}"

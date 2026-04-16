@@ -1,4 +1,4 @@
-resource_group_name  = "rg-solidus-dev-eus2-tfstate"
+resource_group_name  = "rg-solidus-tfstate-dev"
 storage_account_name = "preencher-com-output-do-bootstrap"
 container_name       = "tfstate"
 key                  = "solidus-dev.tfstate"

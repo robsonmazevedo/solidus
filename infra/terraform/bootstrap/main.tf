@@ -16,7 +16,7 @@ data "http" "current_public_ip" {
 }
 
 locals {
-  state_resource_group_name = "rg-${var.workload}-${var.environment}-${var.location_short}-tfstate"
+  state_resource_group_name = "rg-${var.workload}-tfstate-${var.environment}"
 
   base_tags = merge({
     project     = var.project
