@@ -65,3 +65,65 @@ jobs:
           name: cobertura
           path: TestResults/**/coverage.cobertura.xml
           if-no-files-found: warn
+
+  publish-images:
+    name: Publicar imagens no ACR
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository
+    environment:
+      name: acr-publish
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Definir tags
+        id: vars
+        shell: bash
+        run: |
+          echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login no ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Publicar Registros API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/Solidus.Registros.API/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/solidus/registros-api:pr-${{ github.event.pull_request.number }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/solidus/registros-api:sha-${{ steps.vars.outputs.short_sha }}
+
+      - name: Publicar Posicao API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/Solidus.Posicao.API/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/solidus/posicao-api:pr-${{ github.event.pull_request.number }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/solidus/posicao-api:sha-${{ steps.vars.outputs.short_sha }}
+
+      - name: Publicar Posicao Processor
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/Solidus.Posicao.Processor/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/solidus/posicao-processor:pr-${{ github.event.pull_request.number }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/solidus/posicao-processor:sha-${{ steps.vars.outputs.short_sha }}
