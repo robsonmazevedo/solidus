@@ -34,17 +34,17 @@ jobs:
 
     steps:
       - name: "📥 Checkout do código"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: "🔐 Login no Azure"
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: "⚙️ Configurar Terraform"
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.14.0
 
@@ -117,17 +117,17 @@ jobs:
 
     steps:
       - name: "📥 Checkout do código"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: "🔐 Login no Azure"
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: "⚙️ Configurar Terraform"
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.14.0
 
@@ -151,7 +151,7 @@ jobs:
         run: terraform show -no-color tfplan > tfplan.txt
 
       - name: "📤 Publicar artefato do plano"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: terraform-plan-dev
           path: |
@@ -176,17 +176,17 @@ jobs:
 
     steps:
       - name: "📥 Checkout do código"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: "🔐 Login no Azure"
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: "⚙️ Configurar Terraform"
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.14.0
 
@@ -201,7 +201,7 @@ jobs:
             -backend-config="use_cli=true"
 
       - name: "📥 Baixar plano aprovado"
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: terraform-plan-dev
           path: infra/terraform/environments/dev
@@ -223,16 +223,17 @@ jobs:
       (needs.terraform-apply.result == 'success' || needs.terraform-apply.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       checks: write
       pull-requests: write
 
     steps:
       - name: "📥 Checkout do código"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: "🧰 Configurar .NET 10"
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
 
@@ -252,7 +253,7 @@ jobs:
           --results-directory ./TestResults
 
       - name: "📊 Publicar resultados dos testes"
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Testes unitarios
@@ -260,7 +261,7 @@ jobs:
           reporter: dotnet-trx
 
       - name: "🧾 Enviar cobertura"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: cobertura
@@ -280,17 +281,17 @@ jobs:
 
     steps:
       - name: "📥 Checkout do código"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: "🔐 Login no Azure"
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: "🐳 Configurar Docker Buildx"
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: "🔓 Login no ACR"
         shell: bash
@@ -305,7 +306,7 @@ jobs:
         run: echo "pr_tag=v-pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
 
       - name: "📦 Publicar Registros API"
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: src/Solidus.Registros.API/Dockerfile
@@ -316,7 +317,7 @@ jobs:
             ${{ vars.ACR_LOGIN_SERVER }}/solidus/registros-api:${{ steps.image_tags.outputs.pr_tag }}
 
       - name: "📦 Publicar Posicao API"
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: src/Solidus.Posicao.API/Dockerfile
@@ -327,7 +328,7 @@ jobs:
             ${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-api:${{ steps.image_tags.outputs.pr_tag }}
 
       - name: "📦 Publicar Posicao Processor"
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: src/Solidus.Posicao.Processor/Dockerfile
