@@ -418,6 +418,28 @@ FodyWeavers.xsd
 # Windows Installer files from build outputs
 *.cab
 *.msi
+
+# Terraform
+**/.terraform/*
+tfplan
+tfplan.*
+tfplan-*
+*.tfplan
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+backend.hcl
+!*.tfvars.example
+!**/backend.hcl.example
 *.msix
 *.msm
 *.msp

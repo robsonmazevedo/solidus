@@ -48,6 +48,26 @@ services:
     networks:
       - solidus
 
+  postgres-exporter-registros:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1
+    container_name: solidus-postgres-exporter-registros
+    environment:
+      DATA_SOURCE_URI: postgres-registros:5432/${POSTGRES_REGISTROS_DB}?sslmode=disable
+      DATA_SOURCE_USER: ${POSTGRES_USER}
+      DATA_SOURCE_PASS: ${POSTGRES_REGISTROS_PASSWORD}
+    networks:
+      - solidus
+
+  postgres-exporter-posicao:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1
+    container_name: solidus-postgres-exporter-posicao
+    environment:
+      DATA_SOURCE_URI: postgres-posicao:5432/${POSTGRES_POSICAO_DB}?sslmode=disable
+      DATA_SOURCE_USER: ${POSTGRES_USER}
+      DATA_SOURCE_PASS: ${POSTGRES_POSICAO_PASSWORD}
+    networks:
+      - solidus
+
   redis-exporter:
     image: oliver006/redis_exporter:v1.82.0
     container_name: solidus-redis-exporter
