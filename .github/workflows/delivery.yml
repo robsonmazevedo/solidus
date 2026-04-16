@@ -265,23 +265,28 @@ jobs:
 
       - name: "🧮 Gerar plano"
         run: |
-          terraform plan -input=false -out=tfplan \
+          set -o pipefail
+          terraform plan -no-color -input=false -out=tfplan \
             -var="enable_application_apps=true" \
             -var="registros_api_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/registros-api:latest" \
             -var="posicao_api_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-api:latest" \
-            -var="posicao_processor_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-processor:latest"
+            -var="posicao_processor_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-processor:latest" \
+            2>&1 | tee tfplan.log
 
       - name: "📄 Exportar resumo do plano"
+        if: success()
         run: terraform show -no-color tfplan > tfplan.txt
 
       - name: "📤 Publicar artefato do plano"
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: terraform-plan-dev
           path: |
             infra/terraform/environments/dev/tfplan
             infra/terraform/environments/dev/tfplan.txt
-          if-no-files-found: error
+            infra/terraform/environments/dev/tfplan.log
+          if-no-files-found: warn
 
   terraform-apply:
     name: "✅ Terraform Apply"
