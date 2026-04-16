@@ -191,11 +191,6 @@ jobs:
           ACR_NAME="${ACR_NAME%%.*}"
           az acr login --name "$ACR_NAME"
 
-      - name: "🏷️ Definir versão de publicação"
-        id: image_tags
-        shell: bash
-        run: echo "pr_tag=v-pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
-
       - name: "📦 Publicar Registros API"
         uses: docker/build-push-action@v7
         with:
@@ -205,7 +200,6 @@ jobs:
           provenance: false
           tags: |
             ${{ vars.ACR_LOGIN_SERVER }}/solidus/registros-api:latest
-            ${{ vars.ACR_LOGIN_SERVER }}/solidus/registros-api:${{ steps.image_tags.outputs.pr_tag }}
 
       - name: "📦 Publicar Posicao API"
         uses: docker/build-push-action@v7
@@ -216,7 +210,6 @@ jobs:
           provenance: false
           tags: |
             ${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-api:latest
-            ${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-api:${{ steps.image_tags.outputs.pr_tag }}
 
       - name: "📦 Publicar Posicao Processor"
         uses: docker/build-push-action@v7
@@ -227,7 +220,6 @@ jobs:
           provenance: false
           tags: |
             ${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-processor:latest
-            ${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-processor:${{ steps.image_tags.outputs.pr_tag }}
 
   terraform-plan:
     name: "📐 Terraform Plan"
@@ -275,9 +267,9 @@ jobs:
         run: |
           terraform plan -input=false -out=tfplan \
             -var="enable_application_apps=true" \
-            -var="registros_api_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/registros-api:v-pr-${{ github.event.pull_request.number }}" \
-            -var="posicao_api_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-api:v-pr-${{ github.event.pull_request.number }}" \
-            -var="posicao_processor_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-processor:v-pr-${{ github.event.pull_request.number }}"
+            -var="registros_api_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/registros-api:latest" \
+            -var="posicao_api_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-api:latest" \
+            -var="posicao_processor_image=${{ vars.ACR_LOGIN_SERVER }}/solidus/posicao-processor:latest"
 
       - name: "📄 Exportar resumo do plano"
         run: terraform show -no-color tfplan > tfplan.txt
