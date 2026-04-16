@@ -12,7 +12,7 @@ locals {
   container_registry_name              = "acr${var.workload}${var.environment}${var.location_short}"
   registros_api_name                   = "registros-api-${var.workload}-${var.environment}-${var.location_short}"
   posicao_api_name                     = "posicao-api-${var.workload}-${var.environment}-${var.location_short}"
-  posicao_processor_name               = "posicao-processor-${var.workload}-${var.environment}-${var.location_short}"
+  posicao_processor_name               = "posicao-proc-${var.workload}-${var.environment}-${var.location_short}"
   jaeger_app_name                      = "jaeger-${var.workload}-${var.environment}-${var.location_short}"
   prometheus_app_name                  = "prometheus-${var.workload}-${var.environment}-${var.location_short}"
   grafana_app_name                     = "grafana-${var.workload}-${var.environment}-${var.location_short}"
