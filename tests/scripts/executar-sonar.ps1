@@ -1,8 +1,4 @@
-﻿# Executa analise SonarQube local contra o container do config/docker-compose.tools.yml
-# Uso: .\tests\scripts\executar-sonar.ps1 -Token SEU_TOKEN
-# O token pode ser definido na variavel de ambiente SONAR_TOKEN antes de executar o script.
-
-param(
+﻿param(
     [string]$Token      = $env:SONAR_TOKEN,
     [string]$ProjectKey = "Solidus",
     [string]$HostUrl    = "http://localhost:9000"

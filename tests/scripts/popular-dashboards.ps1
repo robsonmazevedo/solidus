@@ -1,19 +1,4 @@
-﻿# Popular os dois dashboards do Grafana com dados reais
-#
-# O que este script faz:
-#   [1/5] Verifica saude de registros-api e posicao-api
-#   [2/5] Envia lancamentos validos  -> Dashboard 1: throughput, latencia, outbox, relay
-#   [3/5] Envia lancamentos invalidos -> Dashboard 1: taxa de erro
-#   [4/5] Aguarda OutboxRelay -> RabbitMQ -> Processor
-#   [5/5] Consulta posicao diaria    -> Dashboard 2: throughput, latencia, cache hit/miss
-#
-# Pre-requisito:
-#   docker compose --project-directory . --env-file config/.env -f config/docker-compose.yml up -d
-#   docker compose --project-directory . --env-file config/.env -f config/docker-compose.obs.yml up -d
-#   docker compose --project-directory . --env-file config/.env -f config/docker-compose.app.yml up -d
-# Execute da raiz do repositorio: .\tests\scripts\popular-dashboards.ps1
-
-param(
+﻿param(
     [string]$RegistrosUrl         = "http://localhost:8080",
     [string]$PosicaoUrl           = "http://localhost:8081",
     [string]$GrafanaUrl           = "http://localhost:3000",

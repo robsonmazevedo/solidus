@@ -1,84 +1,239 @@
-param(
-    [string]$BaseUrlRegistros = "http://localhost:8080",
-    [string]$BaseUrlPosicao   = "http://localhost:8081",
-    [string]$ComercianteId    = "11111111-1111-1111-1111-111111111111"
-)
-
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# ── Pré-requisitos ────────────────────────────────────────────────────────────
+Add-Type -AssemblyName System.Globalization
 
-if (-not (Get-Command k6 -ErrorAction SilentlyContinue)) {
-    Write-Error "k6 não encontrado. Instale com: winget install k6"
+# ── Configuração centralizada ─────────────────────────────────────────────────
+
+$Config = [ordered]@{
+    Ambiente = [ordered]@{
+        BaseUrlRegistros      = "http://localhost:8080"
+        BaseUrlPosicao        = "http://localhost:8081"
+        ComercianteId         = "11111111-1111-1111-1111-111111111111"
+        JwtSecret             = "dev-secret-solidus-mude-em-producao-2026"
+        JwtIssuer             = "solidus"
+        ResultadosDir         = Join-Path $PSScriptRoot "resultados"
+    }
+    Calibragem = [ordered]@{
+        TaxaAlvoReqPorSegundo = 50
+        Duracao               = "1m"
+        VUsPreAlocados        = 50
+        VUsMaximos            = 200
+        TaxaErroMaxima        = 0.05
+        RegistrosP95Ms        = 300
+        RegistrosP99Ms        = 600
+        PosicaoP95Ms          = 200
+        PosicaoP99Ms          = 400
+    }
+    Dados = [ordered]@{
+        DataCompetencia       = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
+        ValorLancamento       = "100.00"
+        DescricaoLancamento   = "carga-k6-solidus"
+    }
+}
+
+$Cenarios = @(
+    [ordered]@{
+        Nome      = "registros-carga"
+        Script    = Join-Path $PSScriptRoot "registros-carga.js"
+        Descricao = "Carga do endpoint de registro"
+    },
+    [ordered]@{
+        Nome      = "posicao-carga"
+        Script    = Join-Path $PSScriptRoot "posicao-carga.js"
+        Descricao = "Carga do endpoint de posição"
+    }
+)
+
+function Ensure-K6Installed {
+    if (-not (Get-Command k6 -ErrorAction SilentlyContinue)) {
+        throw "k6 não encontrado. Instale com: winget install k6"
+    }
+}
+
+function Ensure-Directory([string]$Path) {
+    if (-not (Test-Path $Path)) {
+        New-Item -ItemType Directory -Path $Path | Out-Null
+    }
+}
+
+function Get-JwtToken(
+    [string]$ComercianteId,
+    [string]$Secret,
+    [string]$Issuer
+) {
+    $tokenScript = Join-Path $PSScriptRoot "../scripts/gerar-token.ps1"
+    $output = & $tokenScript -ComercianteId $ComercianteId -Secret $Secret -Issuer $Issuer 6>&1
+    $token = $output |
+        ForEach-Object { $_.ToString() } |
+        Where-Object { $_ -match '^ey' } |
+        Select-Object -First 1
+
+    if (-not $token) {
+        throw "Não foi possível extrair o token JWT para o comerciante $ComercianteId."
+    }
+
+    return $token
+}
+
+function ConvertTo-K6EnvironmentArguments([hashtable]$EnvironmentMap) {
+    $arguments = @()
+
+    foreach ($entry in $EnvironmentMap.GetEnumerator()) {
+        $value = $entry.Value
+
+        if ($value -is [IFormattable]) {
+            $value = $value.ToString($null, [System.Globalization.CultureInfo]::InvariantCulture)
+        }
+
+        $arguments += "-e"
+        $arguments += ("{0}={1}" -f $entry.Key, $value)
+    }
+
+    return $arguments
+}
+
+function ConvertTo-TestDuration([string]$Duration) {
+    if ($Duration -match '^(\d+)([smh])$') {
+        $value = [int]$Matches[1]
+        $unit = $Matches[2]
+
+        switch ($unit) {
+            's' { return [TimeSpan]::FromSeconds($value) }
+            'm' { return [TimeSpan]::FromMinutes($value) }
+            'h' { return [TimeSpan]::FromHours($value) }
+        }
+    }
+
+    throw "Formato de duração não suportado para acompanhamento de progresso: $Duration"
+}
+
+function Get-ScenarioProgress(
+    [string]$ScenarioName,
+    [datetime]$StartTime,
+    [TimeSpan]$ExpectedDuration
+) {
+    $elapsed = (Get-Date) - $StartTime
+    $elapsedSeconds = [Math]::Min($elapsed.TotalSeconds, $ExpectedDuration.TotalSeconds)
+
+    if ($ExpectedDuration.TotalSeconds -le 0) {
+        return $null
+    }
+
+    $percent = [int][Math]::Min(100, [Math]::Floor(($elapsedSeconds / $ExpectedDuration.TotalSeconds) * 100))
+    $remaining = $ExpectedDuration - [TimeSpan]::FromSeconds($elapsedSeconds)
+
+    return [ordered]@{
+        ScenarioName = $ScenarioName
+        Percent      = $percent
+        Elapsed      = $elapsed
+        Remaining    = $remaining
+    }
+}
+
+function Invoke-K6Scenario(
+    [hashtable]$Scenario,
+    [hashtable]$EnvironmentMap,
+    [string]$Timestamp,
+    [string]$OutputDirectory
+) {
+    if (-not (Test-Path $Scenario.Script)) {
+        throw "Script do cenário não encontrado: $($Scenario.Script)"
+    }
+
+    Write-Host ""
+    Write-Host ("Executando cenário: {0} ({1})..." -f $Scenario.Nome, $Scenario.Descricao) -ForegroundColor Cyan
+
+    $outputFile = Join-Path $OutputDirectory ("{0}-{1}.json" -f $Scenario.Nome, $Timestamp)
+    $arguments = @("run")
+    $arguments += ConvertTo-K6EnvironmentArguments $EnvironmentMap
+    $arguments += @("--out", "json=$outputFile", $Scenario.Script)
+
+    $expectedDuration = ConvertTo-TestDuration $EnvironmentMap.DURACAO_TESTE
+    $startedAt = Get-Date
+    $process = Start-Process -FilePath "k6" -ArgumentList $arguments -NoNewWindow -PassThru
+    $lastReportedPercent = -1
+
+    while (-not $process.HasExited) {
+        $progress = Get-ScenarioProgress -ScenarioName $Scenario.Nome -StartTime $startedAt -ExpectedDuration $expectedDuration
+
+        if ($null -ne $progress) {
+            $reportBucket = [int]([Math]::Floor($progress.Percent / 10) * 10)
+
+            if ($reportBucket -gt $lastReportedPercent) {
+                Write-Host (
+                    "[{0}] {1,3}% | decorrido {2:mm\:ss} | restante estimado {3:mm\:ss}" -f
+                    $progress.ScenarioName,
+                    $progress.Percent,
+                    $progress.Elapsed,
+                    $progress.Remaining
+                ) -ForegroundColor DarkGray
+                $lastReportedPercent = $reportBucket
+            }
+        }
+
+        Start-Sleep -Seconds 1
+        $process.Refresh()
+    }
+
+    Write-Host ("[{0}] 100% | concluido" -f $Scenario.Nome) -ForegroundColor DarkGray
+
+    $success = $process.ExitCode -eq 0
+
+    return [ordered]@{
+        Nome    = $Scenario.Nome
+        Sucesso = $success
+    }
+}
+
+Ensure-K6Installed
+Ensure-Directory $Config.Ambiente.ResultadosDir
+
+$token = Get-JwtToken $Config.Ambiente.ComercianteId $Config.Ambiente.JwtSecret $Config.Ambiente.JwtIssuer
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+
+$environmentMap = [ordered]@{
+    BASE_URL_REGISTROS   = $Config.Ambiente.BaseUrlRegistros
+    BASE_URL_POSICAO     = $Config.Ambiente.BaseUrlPosicao
+    TOKEN                = $token
+    TAXA_ALVO_RPS        = $Config.Calibragem.TaxaAlvoReqPorSegundo
+    DURACAO_TESTE        = $Config.Calibragem.Duracao
+    VUS_PRE_ALOCADOS     = $Config.Calibragem.VUsPreAlocados
+    VUS_MAXIMOS          = $Config.Calibragem.VUsMaximos
+    TAXA_ERRO_MAXIMA     = $Config.Calibragem.TaxaErroMaxima
+    REGISTROS_P95_MS     = $Config.Calibragem.RegistrosP95Ms
+    REGISTROS_P99_MS     = $Config.Calibragem.RegistrosP99Ms
+    POSICAO_P95_MS       = $Config.Calibragem.PosicaoP95Ms
+    POSICAO_P99_MS       = $Config.Calibragem.PosicaoP99Ms
+    DATA_COMPETENCIA     = $Config.Dados.DataCompetencia
+    VALOR_LANCAMENTO     = $Config.Dados.ValorLancamento
+    DESCRICAO_LANCAMENTO = $Config.Dados.DescricaoLancamento
+}
+
+$resultados = @()
+
+foreach ($cenario in $Cenarios) {
+    $resultados += Invoke-K6Scenario $cenario $environmentMap $timestamp $Config.Ambiente.ResultadosDir
+}
+
+Write-Host ""
+Write-Host "-----------------------------------------" -ForegroundColor DarkGray
+Write-Host " Resumo dos testes de carga" -ForegroundColor Cyan
+Write-Host "-----------------------------------------" -ForegroundColor DarkGray
+
+foreach ($resultado in $resultados) {
+    if ($resultado.Sucesso) {
+        Write-Host ("  {0,-24} PASSOU" -f $resultado.Nome) -ForegroundColor Green
+    }
+    else {
+        Write-Host ("  {0,-24} FALHOU" -f $resultado.Nome) -ForegroundColor Red
+    }
+}
+
+Write-Host "-----------------------------------------" -ForegroundColor DarkGray
+Write-Host (" Resultados salvos em: {0}" -f $Config.Ambiente.ResultadosDir) -ForegroundColor DarkGray
+Write-Host ""
+
+if ($resultados.Where({ -not $_.Sucesso }).Count -gt 0) {
     exit 1
 }
-
-# ── Token JWT ─────────────────────────────────────────────────────────────────
-
-Write-Host "Gerando token JWT..." -ForegroundColor Cyan
-
-$tokenScript = Join-Path $PSScriptRoot "../scripts/gerar-token.ps1"
-$output      = & $tokenScript -ComercianteId $ComercianteId 6>&1
-$TOKEN       = ($output | ForEach-Object { $_.ToString() } | Where-Object { $_ -match '^ey' } | Select-Object -First 1)
-
-if (-not $TOKEN) {
-    Write-Error "Não foi possível extrair o token JWT."
-    exit 1
-}
-
-Write-Host "Token gerado com sucesso." -ForegroundColor Green
-
-# ── Diretório de resultados ───────────────────────────────────────────────────
-
-$resultados = Join-Path $PSScriptRoot "resultados"
-if (-not (Test-Path $resultados)) {
-    New-Item -ItemType Directory -Path $resultados | Out-Null
-}
-
-$ts = Get-Date -Format "yyyyMMdd-HHmmss"
-
-# ── Testes ────────────────────────────────────────────────────────────────────
-
-Write-Host ""
-Write-Host "Executando teste de carga: registros (POST /lancamentos)..." -ForegroundColor Cyan
-k6 run `
-    -e TOKEN=$TOKEN `
-    -e BASE_URL=$BaseUrlRegistros `
-    --out "json=$(Join-Path $resultados "registros-$ts.json")" `
-    (Join-Path $PSScriptRoot "registros.js")
-$registrosOk = $LASTEXITCODE -eq 0
-
-Write-Host ""
-Write-Host "Executando teste de carga: posicao (GET /posicao/diaria)..." -ForegroundColor Cyan
-k6 run `
-    -e TOKEN=$TOKEN `
-    -e BASE_URL=$BaseUrlPosicao `
-    --out "json=$(Join-Path $resultados "posicao-$ts.json")" `
-    (Join-Path $PSScriptRoot "posicao.js")
-$posicaoOk = $LASTEXITCODE -eq 0
-
-# ── Resumo ────────────────────────────────────────────────────────────────────
-
-Write-Host ""
-Write-Host "-----------------------------------------" -ForegroundColor DarkGray
- Write-Host " Resumo dos testes de carga" -ForegroundColor Cyan
-Write-Host "-----------------------------------------" -ForegroundColor DarkGray
-
-if ($registrosOk) {
-    Write-Host "  registros  PASSOU" -ForegroundColor Green
-} else {
-    Write-Host "  registros  FALHOU" -ForegroundColor Red
-}
-
-if ($posicaoOk) {
-    Write-Host "  posicao    PASSOU" -ForegroundColor Green
-} else {
-    Write-Host "  posicao    FALHOU" -ForegroundColor Red
-}
-
-Write-Host "-----------------------------------------" -ForegroundColor DarkGray
-Write-Host " Resultados salvos em: tests/load/resultados/" -ForegroundColor DarkGray
-Write-Host ""
-
-if (-not $registrosOk -or -not $posicaoOk) { exit 1 }

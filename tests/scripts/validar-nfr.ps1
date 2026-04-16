@@ -1,6 +1,3 @@
-# Validação do RNF-001: Registros deve permanecer disponível independente de Posição
-# Execute a partir da raiz do repositório: .\tests\scripts\validar-nfr.ps1
-
 param(
     [string]$RegistrosUrl  = "http://localhost:8080",
     [string]$PosicaoUrl    = "http://localhost:8081",

@@ -1,6 +1,3 @@
-# Exporta issues abertas do SonarQube para arquivos locais em sonar-export/
-# Uso: .\tests\scripts\exportar-sonar.ps1 -Token SEU_TOKEN
-
 param(
     [string]$Token      = $env:SONAR_TOKEN,
     [string]$ProjectKey = "Solidus",

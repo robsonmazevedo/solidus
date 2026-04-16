@@ -10,6 +10,7 @@
 *.userosscache
 *.sln.docstates
 *.env
+archive.tar
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -57,6 +58,9 @@ Generated\ Files/
 .sonarqube/
 .scannerwork/
 sonar-export/
+
+# k6 load test output
+tests/load/resultados/
 
 # NUnit
 *.VisualState.xml
